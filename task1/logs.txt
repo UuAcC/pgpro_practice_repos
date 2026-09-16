@@ -1,0 +1,70 @@
+/*
+Комментарий:
+Имя пользователя изменено на USERNAME для удобства
+*/
+
+USERNAME:~/Desktop/pgpro_practice_repos$ git branch docs/change_readme
+USERNAME:~/Desktop/pgpro_practice_repos$ git checkout docs/change_readme
+Switched to branch 'docs/change_readme'
+USERNAME:~/Desktop/pgpro_practice_repos$ git add .
+USERNAME:~/Desktop/pgpro_practice_repos$ git commit -m "docs: update README"
+[docs/change_readme 854f8e1] docs: update README
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+/*
+Комментарий:
+Я захотел попробовать сделать squash в rebase -i, т.к. до этого никогда не пробовал ни того, ни другого.
+По заданию, вроде, не воспрещается)
+*/
+
+USERNAME:~/Desktop/pgpro_practice_repos$ git add .
+USERNAME:~/Desktop/pgpro_practice_repos$ git commit -m "fix: to do task1"
+[docs/change_readme 9ab1a17] fix: to do task1
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+USERNAME:~/Desktop/pgpro_practice_repos$ git checkout main
+Switched to branch 'main'
+Your branch is up to date with 'origin/main'.
+USERNAME:~/Desktop/pgpro_practice_repos$ git pull --ff-only
+Already up to date.
+USERNAME:~/Desktop/pgpro_practice_repos$ git checkout docs/change_readme
+Switched to branch 'docs/change_readme'
+USERNAME:~/Desktop/pgpro_practice_repos$ git rebase -i main
+error: could not parse '854f8eq1'
+error: invalid line 4: pick 854f8eq1
+You can fix this with 'git rebase --edit-todo' and then run 'git rebase --continue'.
+Or you can abort the rebase with 'git rebase --abort'.
+
+/*
+Комментарий:
+Здесь я разбирался, как делать rebase -i в nano, вроде бы понял, потому что сработало.
+*/
+
+USERNAME:~/Desktop/pgpro_practice_repos$ git rebase --edit-todo
+USERNAME:~/Desktop/pgpro_practice_repos$ git rebase --continue
+[detached HEAD 8801f6c] docs: update README
+ Date: Wed Sep 16 20:05:34 2026 +0300
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+Successfully rebased and updated refs/heads/docs/change_readme.
+USERNAME:~/Desktop/pgpro_practice_repos$ git push origin docs/change_readme:main
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 369 bytes | 369.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+To github.com:UuAcC/pgpro_practice_repos.git
+   9c03947..8801f6c  docs/change_readme -> main
+USERNAME:~/Desktop/pgpro_practice_repos$ git checkout main
+Switched to branch 'main'
+Your branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+USERNAME:~/Desktop/pgpro_practice_repos$ git pull --ff-only
+Updating 9c03947..8801f6c
+Fast-forward
+ README.md | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+USERNAME:~/Desktop/pgpro_practice_repos$ git log --oneline -3
+8801f6c (HEAD -> main, origin/main, origin/HEAD, docs/change_readme) docs: update README
+9c03947 Initial commit
+USERNAME:~/Desktop/pgpro_practice_repos$ git branch -d docs/change_readme
+Deleted branch docs/change_readme (was 8801f6c).
