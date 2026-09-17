@@ -1,0 +1,20 @@
+USERNAME:~$ pg_ctl -D ~/postgres/data/rel_18_4/debug -l ~/postgres/log/rel_18_4/debug/postgres.log start
+waiting for server to start.... done
+server started
+USERNAME:~$ psql -U postgres
+psql (18.4)
+Type "help" for help.
+
+postgres=# CREATE EXTENSION basic_extension;
+CREATE EXTENSION
+postgres=# SELECT hello_world('My echo');
+NOTICE:  Hello world! Your input: My echo
+ hello_world
+-------------
+
+(1 row)
+
+postgres=# DROP EXTENSION basic_extension;
+DROP EXTENSION
+postgres=# exit
+USERNAME:~$
