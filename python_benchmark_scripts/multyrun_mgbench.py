@@ -14,6 +14,7 @@ from pathlib import Path
 # Настройки
 # =============================================
 DB = "pgbench_test"
+USED_VERSION = "master"
 TIME = 60
 THREADS = 2
 BUFFERS_SIZES = ["512MB", "1GB"]
@@ -21,9 +22,9 @@ CLIENTS = [1, 2, 4, 8, 16, 32, 64, 128]
 REPEATS = 3
 
 HOME = Path.home()
-DATA_DIR = HOME / "postgres" / "data" / "rel_18_4" / "debug"
-LOG_DIR = HOME / "postgres" / "log" / "rel_18_4" / "debug"
-INSTALL_DIR = HOME / "postgres" / "install" / "rel_18_4" / "debug"
+DATA_DIR = HOME / "postgres" / "data" / USED_VERSION / "debug"
+LOG_DIR = HOME / "postgres" / "log" / USED_VERSION / "debug"
+INSTALL_DIR = HOME / "postgres" / "install" / USED_VERSION / "debug"
 
 PG_CTL = INSTALL_DIR / "bin" / "pg_ctl"
 PGBENCH = INSTALL_DIR / "bin" / "pgbench"
@@ -78,7 +79,10 @@ def set_shared_buffers(size):
     time.sleep(2)
 
     # Проверить, что параметр применился
-    cp = run_cmd([str(PSQL), "-d", "postgres", "-t", "-c", "-U", "postgres", "SHOW shared_buffers;"])
+    if USED_VERSION == "master":
+        cp = run_cmd([str(PSQL), "-d", "postgres", "-t", "-c", "SHOW shared_buffers;"])
+    else:
+        cp = run_cmd([str(PSQL), "-d", "postgres", "-t", "-c", "-U", "postgres", "SHOW shared_buffers;"])
     actual = cp.stdout.strip().replace(" ", "")
     print(f"Проверка: shared_buffers = {actual}")
 
@@ -92,19 +96,33 @@ def run_and_extract(buffers, clients, run_num):
 
     # Запуск pgbench, вывод пишем в лог-файл (аналог '> log 2>&1')
     with temp_log_file.open("w", encoding="utf-8") as temp_log:
-        subprocess.run(
-            [
-                str(PGBENCH),
-                "-c", str(clients),
-                "-j", str(THREADS),
-                "-T", str(TIME),
-                "-U", "postgres",
-                "-P", "100000",
-                "-d", DB
-            ],
-            stdout=temp_log,
-            stderr=subprocess.STDOUT,
-        )
+        if USED_VERSION == "master":
+            subprocess.run(
+                [
+                    str(PGBENCH),
+                    "-c", str(clients),
+                    "-j", str(THREADS),
+                    "-T", str(TIME),
+                    "-P", "100000",
+                    "-d", DB
+                ],
+                stdout=temp_log,
+                stderr=subprocess.STDOUT,
+            )
+        else:
+            subprocess.run(
+                [
+                    str(PGBENCH),
+                    "-c", str(clients),
+                    "-j", str(THREADS),
+                    "-T", str(TIME),
+                    "-U", "postgres",
+                    "-P", "100000",
+                    "-d", DB
+                ],
+                stdout=temp_log,
+                stderr=subprocess.STDOUT,
+            )
 
     output = temp_log_file.read_text(encoding="utf-8", errors="replace")
 
