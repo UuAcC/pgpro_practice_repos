@@ -1,23 +1,22 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
 
 # =============================================
-# 1. Настройки: какие файлы и как их рисовать
+# 1. Настройки
 # =============================================
-USED_VERSION = "master"
+
+USED_VERSION = sys.argv[1]
 FILES = {
     "pg_stat_statements OFF": f"tps_results_{USED_VERSION}_base.csv",
     "pg_stat_statements ON": f"tps_results_{USED_VERSION}_exc.csv",
 }
 
-# Цвет линии для каждого файла (matplotlib-имена или hex)
 FILE_COLORS = {
     "pg_stat_statements OFF": "tab:blue",
-    "pg_stat_statements ON": "tab:red",
+    "pg_stat_statements ON": "tab:orange",
 }
 
-# Стиль линии по размеру буфера
-# Ключи должны ТОЧНО совпадать со значениями колонки "buffers" в CSV
 BUFFER_STYLES = {
     "512MB":  {"linestyle": "--", "marker": "o", "label_suffix": " (512MB)"},
     "1GB": {"linestyle": "-",  "marker": "s", "label_suffix": " (1GB)"},
@@ -27,18 +26,17 @@ BUFFER_STYLES = {
 # =============================================
 # 2. Построение графика
 # =============================================
+
 fig, ax = plt.subplots(figsize=(9, 6))
 
 for file_label, filename in FILES.items():
-    # --- читаем CSV и усредняем по повторам ---
     df = pd.read_csv(filename)
-    df["tps"] = pd.to_numeric(df["tps"], errors="coerce")
-    df = df.dropna(subset=["tps"])
-    avg = df.groupby(["buffers", "clients"], as_index=False)["tps"].mean()
+    df["latency_avg"] = pd.to_numeric(df["latency_avg"], errors="coerce")
+    df = df.dropna(subset=["latency_avg"])
+    avg = df.groupby(["buffers", "clients"], as_index=False)["latency_avg"].mean()
 
     color = FILE_COLORS.get(file_label, None)
 
-    # --- рисуем по одной линии на каждый размер буфера ---
     for buffers_value, group in avg.groupby("buffers"):
         style = BUFFER_STYLES.get(
             buffers_value,
@@ -48,7 +46,7 @@ for file_label, filename in FILES.items():
 
         ax.plot(
             group["clients"],
-            group["tps"],
+            group["latency_avg"],
             linestyle=style["linestyle"],
             marker=style["marker"],
             color=color,
@@ -57,17 +55,12 @@ for file_label, filename in FILES.items():
             label=f"{file_label}{style['label_suffix']}",
         )
 
-
 # =============================================
 # 3. Оформление
 # =============================================
-ax.set_xlabel("Число клиентов (clients)")
-ax.set_ylabel("Среднее TPS")
 
-# Лог-шкала по X: 1, 2, 4, ..., 128
-ax.set_xscale("log", base=2)
-ax.set_xticks([1, 2, 4, 8, 16, 32, 64, 128])
-ax.set_xticklabels([1, 2, 4, 8, 16, 32, 64, 128])
+ax.set_xlabel("Число клиентов (clients)")
+ax.set_ylabel("Среднее latency_avg")
 
 ax.grid(True, which="both", linestyle="--", alpha=0.5)
 ax.legend()
@@ -76,5 +69,6 @@ plt.tight_layout()
 # =============================================
 # 4. Сохранение и показ
 # =============================================
-plt.savefig("tps_plot.png", dpi=200)
+
+plt.savefig("lat_plot.png", dpi=200)
 plt.show()

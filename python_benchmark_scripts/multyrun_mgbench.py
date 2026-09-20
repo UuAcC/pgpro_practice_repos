@@ -9,12 +9,13 @@ import re
 import subprocess
 import time
 from pathlib import Path
+import sys
 
 # =============================================
 # Настройки
 # =============================================
 DB = "pgbench_test"
-USED_VERSION = "master"
+USED_VERSION = sys.argv[1]
 TIME = 60
 THREADS = 2
 BUFFERS_SIZES = ["512MB", "1GB"]
