@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Нагрузочное тестирование PostgreSQL с pgbench.
-Перебор shared_buffers и числа клиентов, запись результатов в CSV.
-"""
-
 import csv
 import re
 import subprocess
@@ -14,6 +8,7 @@ import sys
 # =============================================
 # Настройки
 # =============================================
+
 DB = "pgbench_test"
 USED_VERSION = sys.argv[1]
 TIME = 60
@@ -31,7 +26,7 @@ PG_CTL = INSTALL_DIR / "bin" / "pg_ctl"
 PGBENCH = INSTALL_DIR / "bin" / "pgbench"
 PSQL = INSTALL_DIR / "bin" / "psql"
 
-RESULT_FILE = Path("tps_results.csv")
+RESULT_FILE = Path(f"results_{USED_VERSION}_unknown.csv")
 TEMP_DIR = Path("temp_results")
 CONF_FILE = DATA_DIR / "postgresql.conf"
 PG_LOG = LOG_DIR / "postgres.log"
@@ -44,6 +39,7 @@ RE_LAT_STDDEV = re.compile(r"latency stddev\s*=\s*([\d.]+)")
 # =============================================
 # Вспомогательные функции
 # =============================================
+
 def run_cmd(cmd):
     """Запустить команду и дождаться завершения. Возвращает CompletedProcess."""
     return subprocess.run(cmd, capture_output=True, text=True)
@@ -58,6 +54,7 @@ def extract(regex, text):
 # =============================================
 # Функция для изменения shared_buffers
 # =============================================
+
 def set_shared_buffers(size):
     print("=" * 41)
     print(f"Устанавливаем shared_buffers = {size}")
@@ -75,11 +72,9 @@ def set_shared_buffers(size):
     )
     CONF_FILE.write_text(new_text, encoding="utf-8")
 
-    # Перезапустить сервер
     run_cmd([str(PG_CTL), "-D", str(DATA_DIR), "-l", str(PG_LOG), "restart"])
     time.sleep(2)
 
-    # Проверить, что параметр применился
     if USED_VERSION == "master":
         cp = run_cmd([str(PSQL), "-d", "postgres", "-t", "-c", "SHOW shared_buffers;"])
     else:
@@ -91,11 +86,11 @@ def set_shared_buffers(size):
 # =============================================
 # Функция для запуска одного теста и извлечения результатов
 # =============================================
+
 def run_and_extract(buffers, clients, run_num):
     temp_log_file = TEMP_DIR / f"bench_{buffers}_c{clients}_run{run_num}.log"
     print(f"Запуск: buffers={buffers}, clients={clients}, run={run_num}")
 
-    # Запуск pgbench, вывод пишем в лог-файл (аналог '> log 2>&1')
     with temp_log_file.open("w", encoding="utf-8") as temp_log:
         if USED_VERSION == "master":
             subprocess.run(
@@ -139,10 +134,10 @@ def run_and_extract(buffers, clients, run_num):
 # =============================================
 # Основной цикл
 # =============================================
+
 def main():
     TEMP_DIR.mkdir(exist_ok=True)
 
-    # Открываем CSV один раз и пишем заголовок + все строки
     with RESULT_FILE.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["buffers", "clients", "run",
@@ -163,6 +158,7 @@ def main():
     # =============================================
     # Завершение
     # =============================================
+    
     print()
     print("=" * 41)
     print("Все тесты завершены!")

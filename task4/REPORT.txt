@@ -1,0 +1,212 @@
+В этом отчете объединены логи терминалов с psql и с gdb. Для удобства логи psql выделены с обеих сторон, имя пользователя linux изменено на более короткое USERNAME.
+Написанная функция принимает один аргумент типа text, приводит его к типа char* и выводит на экран notice вида "Hello world! Your input: %s", где %s - полученная строка.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+USERNAME:~$ pg_ctl -D ~/postgres/data/debug -l ~/postgres/log/debug/postgres.log start
+waiting for server to start.... done
+server started
+USERNAME:~$ psql -d postgres -U postgres
+psql (18.4)
+Type "help" for help.
+
+postgres=# SELECT pg_backend_pid();
+ pg_backend_pid
+----------------
+           3963
+(1 row)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+USERNAME:~$ sudo gdb -p 3963
+GNU gdb (Ubuntu 17.1-2ubuntu1) 17.1
+Copyright (C) 2025 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+Attaching to process 3963
+Reading symbols from /home/maximlinux/postgres/install/debug/bin/postgres...
+Reading symbols from /usr/lib/x86_64-linux-gnu/libz.so.1...
+(No debugging symbols found in /usr/lib/x86_64-linux-gnu/libz.so.1)
+Reading symbols from /usr/lib/x86_64-linux-gnu/libm.so.6...
+Reading symbols from /usr/lib/debug/.build-id/20/00a7e6c07f2ef41f3d22f773393360523edc21.debug...
+Reading symbols from /usr/lib/x86_64-linux-gnu/libicui18n.so.78...
+(No debugging symbols found in /usr/lib/x86_64-linux-gnu/libicui18n.so.78)
+Reading symbols from /usr/lib/x86_64-linux-gnu/libicuuc.so.78...
+(No debugging symbols found in /usr/lib/x86_64-linux-gnu/libicuuc.so.78)
+Reading symbols from /usr/lib/x86_64-linux-gnu/libc.so.6...
+Reading symbols from /usr/lib/debug/.build-id/06/6527e430a32768d82741e00b81eebb1a872294.debug...
+Reading symbols from /lib64/ld-linux-x86-64.so.2...
+Reading symbols from /usr/lib/debug/.build-id/6b/2f4bfcb50bb93f530e1992b8a9d112650bdae7.debug...
+Reading symbols from /usr/lib/x86_64-linux-gnu/libstdc++.so.6...
+(No debugging symbols found in /usr/lib/x86_64-linux-gnu/libstdc++.so.6)
+Reading symbols from /usr/lib/x86_64-linux-gnu/libgcc_s.so.1...
+(No debugging symbols found in /usr/lib/x86_64-linux-gnu/libgcc_s.so.1)
+Reading symbols from /usr/lib/x86_64-linux-gnu/libicudata.so.78...
+(No debugging symbols found in /usr/lib/x86_64-linux-gnu/libicudata.so.78)
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/x86_64-linux-gnu/libthread_db.so.1".
+__internal_syscall_cancel (a1=6, a2=106428727363936, a3=1, a4=-1, a5=0, a6=0, nr=232) at ./nptl/cancellation.c:40
+
+⚠ warning: 40  ./nptl/cancellation.c: No such file or directory
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+postgres=# SELECT hello_world('my echo');
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+(gdb) b hello_world
+Breakpoint 2 at 0x7bea7bac01f9: file basic_extension.c, line 11.
+(gdb) b ExecutorRun
+Breakpoint 3 at 0x60cbbbdb9e73: file execMain.c, line 300.
+(gdb) c
+Continuing.
+
+Breakpoint 3, ExecutorRun (queryDesc=0x60cbde7febc0, direction=ForwardScanDirection, count=0) at execMain.c:300
+300             if (ExecutorRun_hook)
+(gdb) next
+303                     standard_ExecutorRun(queryDesc, direction, count);
+(gdb) bt
+#0  ExecutorRun (queryDesc=0x60cbde7febc0, direction=ForwardScanDirection, count=0) at execMain.c:303
+#1  0x000060cbbc0c8022 in PortalRunSelect (portal=0x60cbde855320, forward=true, count=0, dest=0x60cbde800c70) at pquery.c:921
+#2  0x000060cbbc0c7c57 in PortalRun (portal=0x60cbde855320, count=9223372036854775807, isTopLevel=true, dest=0x60cbde800c70, altdest=0x60cbde800c70, qc=0x7ffd8a8ce280) at pquery.c:765
+#3  0x000060cbbc0c0112 in exec_simple_query (query_string=0x60cbde7d45d0 "SELECT hello_world('my echo');") at postgres.c:1274
+#4  0x000060cbbc0c5b76 in PostgresMain (dbname=0x60cbde80eac8 "postgres", username=0x60cbde80eaa8 "postgres") at postgres.c:4770
+#5  0x000060cbbc0bb749 in BackendMain (startup_data=0x7ffd8a8ce530, startup_data_len=24) at backend_startup.c:124
+#6  0x000060cbbbfb9cbb in postmaster_child_launch (child_type=B_BACKEND, child_slot=1, startup_data=0x7ffd8a8ce530, startup_data_len=24, client_sock=0x7ffd8a8ce590) at launch_backend.c:290
+#7  0x000060cbbbfc08cd in BackendStartup (client_sock=0x7ffd8a8ce590) at postmaster.c:3569
+#8  0x000060cbbbfbde21 in ServerLoop () at postmaster.c:1703
+#9  0x000060cbbbfbd716 in PostmasterMain (argc=3, argv=0x60cbde7ce9c0) at postmaster.c:1401
+#10 0x000060cbbbe4dc08 in main (argc=3, argv=0x60cbde7ce9c0) at main.c:227
+(gdb) next
+
+Breakpoint 2, hello_world (fcinfo=0x60cbde8b7308) at basic_extension.c:11
+11              text* arg_text = PG_GETARG_TEXT_PP(0);
+(gdb) watch c_string
+Hardware watchpoint 4: c_string
+(gdb) c
+Continuing.
+
+Hardware watchpoint 4: c_string
+
+Old value = 0x60cbde800760 "@"
+New value = 0x60cbde8b8b30 "my echo"
+hello_world (fcinfo=0x60cbde8b7308) at basic_extension.c:13
+13          elog(NOTICE, "Hello world! Your input: %s", c_string);
+(gdb) print arg_text
+$4 = (text *) 0x60cbde7d5810
+(gdb) print *arg_text
+$5 = {vl_len_ = ",\000\000", vl_dat = 0x60cbde7d5814 "my echo~\177\177\177\1770"}
+(gdb) print arg_text->vl_dat
+$6 = 0x60cbde7d5814 "my echo~\177\177\177\1770"
+(gdb) info local
+__errno_location = <optimized out>
+arg_text = 0x60cbde7d5810
+c_string = 0x60cbde8b8b30 "my echo"
+__func__ = "hello_world"
+(gdb) info args
+fcinfo = 0x60cbde8b7308
+(gdb) print *(fcinfo)
+$7 = {flinfo = 0x60cbde8b72b8, context = 0x0, resultinfo = 0x0, fncollation = 100, isnull = false, nargs = 1, args = 0x60cbde8b7328}
+(gdb) print *(fcinfo->flinfo)
+$8 = {fn_addr = 0x7bea7bac01e9 <hello_world>, fn_oid = 16393, fn_nargs = 1, fn_strict = true, fn_retset = false, fn_stats = 1 '\001', fn_extra = 0x0, fn_mcxt = 0x60cbde8b6a20, fn_expr = 0x60cbde7d6178}
+(gdb) bt
+#0  hello_world (fcinfo=0x60cbde8b7308) at basic_extension.c:13
+#1  0x000060cbbbdaa42c in ExecInterpExpr (state=0x60cbde8b71b0, econtext=0x60cbde8b6e58, isnull=0x0) at execExprInterp.c:985
+#2  0x000060cbbbdad088 in ExecInterpExprStillValid (state=0x60cbde8b71b0, econtext=0x60cbde8b6e58, isNull=0x0) at execExprInterp.c:2307
+#3  0x000060cbbbe123c3 in ExecEvalExprNoReturn (state=0x60cbde8b71b0, econtext=0x60cbde8b6e58) at ../../../src/include/executor/executor.h:419
+#4  0x000060cbbbe12481 in ExecEvalExprNoReturnSwitchContext (state=0x60cbde8b71b0, econtext=0x60cbde8b6e58) at ../../../src/include/executor/executor.h:460
+#5  0x000060cbbbe124e2 in ExecProject (projInfo=0x60cbde8b71a8) at ../../../src/include/executor/executor.h:492
+#6  0x000060cbbbe12705 in ExecResult (pstate=0x60cbde8b6d48) at nodeResult.c:135
+#7  0x000060cbbbdc7c48 in ExecProcNodeFirst (node=0x60cbde8b6d48) at execProcnode.c:469
+#8  0x000060cbbbdb9990 in ExecProcNode (node=0x60cbde8b6d48) at ../../../src/include/executor/executor.h:315
+#9  0x000060cbbbdbca3d in ExecutePlan (queryDesc=0x60cbde7febc0, operation=CMD_SELECT, sendTuples=true, numberTuples=0, direction=ForwardScanDirection, dest=0x60cbde800c70) at execMain.c:1711
+#10 0x000060cbbbdba052 in standard_ExecutorRun (queryDesc=0x60cbde7febc0, direction=ForwardScanDirection, count=0) at execMain.c:366
+#11 0x000060cbbbdb9eb0 in ExecutorRun (queryDesc=0x60cbde7febc0, direction=ForwardScanDirection, count=0) at execMain.c:303
+#12 0x000060cbbc0c8022 in PortalRunSelect (portal=0x60cbde855320, forward=true, count=0, dest=0x60cbde800c70) at pquery.c:921
+#13 0x000060cbbc0c7c57 in PortalRun (portal=0x60cbde855320, count=9223372036854775807, isTopLevel=true, dest=0x60cbde800c70, altdest=0x60cbde800c70, qc=0x7ffd8a8ce280) at pquery.c:765
+#14 0x000060cbbc0c0112 in exec_simple_query (query_string=0x60cbde7d45d0 "SELECT hello_world('my echo');") at postgres.c:1274
+#15 0x000060cbbc0c5b76 in PostgresMain (dbname=0x60cbde80eac8 "postgres", username=0x60cbde80eaa8 "postgres") at postgres.c:4770
+#16 0x000060cbbc0bb749 in BackendMain (startup_data=0x7ffd8a8ce530, startup_data_len=24) at backend_startup.c:124
+#17 0x000060cbbbfb9cbb in postmaster_child_launch (child_type=B_BACKEND, child_slot=1, startup_data=0x7ffd8a8ce530, startup_data_len=24, client_sock=0x7ffd8a8ce590) at launch_backend.c:290
+#18 0x000060cbbbfc08cd in BackendStartup (client_sock=0x7ffd8a8ce590) at postmaster.c:3569
+#19 0x000060cbbbfbde21 in ServerLoop () at postmaster.c:1703
+#20 0x000060cbbbfbd716 in PostmasterMain (argc=3, argv=0x60cbde7ce9c0) at postmaster.c:1401
+#21 0x000060cbbbe4dc08 in main (argc=3, argv=0x60cbde7ce9c0) at main.c:227
+(gdb) next
+14          pfree(c_string);
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+NOTICE:  Hello world! Your input: my echo
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+(gdb) c
+Continuing.
+
+Watchpoint 4 deleted because the program has left the block in
+which its expression is valid.
+0x000060cbbbdaa42c in ExecInterpExpr (state=0x60cbde8b71b0, econtext=0x60cbde8b6e58, isnull=0x0) at execExprInterp.c:985
+985                                     d = op->d.func.fn_addr(fcinfo);
+(gdb) clear ExecutorRun
+Deleted breakpoint 3
+(gdb) c
+Continuing.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ hello_world
+-------------
+
+(1 row)
+
+postgres=# SELECT hello_world('Checking if ExecutorRun breakpoint is deleted');
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Breakpoint 2, hello_world (fcinfo=0x60cbde8b7308) at basic_extension.c:11
+11              text* arg_text = PG_GETARG_TEXT_PP(0);
+(gdb) next
+12          char* c_string = text_to_cstring(arg_text);
+(gdb) next
+13          elog(NOTICE, "Hello world! Your input: %s", c_string);
+(gdb) step
+errstart (elevel=18, domain=0x0) at elog.c:347
+347             bool            output_to_client = false;
+(gdb) step
+354             if (elevel >= ERROR)
+(gdb) step
+400             output_to_server = should_output_to_server(elevel);
+(gdb) finish
+Run till exit from #0  errstart (elevel=18, domain=0x0) at elog.c:400
+0x00007bea7bac0234 in hello_world (fcinfo=0x60cbde8b7308) at basic_extension.c:13
+13          elog(NOTICE, "Hello world! Your input: %s", c_string);
+Value returned is $9 = true
+(gdb) next
+14          pfree(c_string);
+(gdb) detach
+Detaching from program: /home/maximlinux/postgres/install/debug/bin/postgres, process 3963
+[Inferior 1 (process 3963) detached]
+(gdb) exit
+USERNAME:~$
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+NOTICE:  Hello world! Your input: Checking if ExecutorRun breakpoint is deleted
+ hello_world
+-------------
+
+(1 row)
+
+postgres=# exit
+USERNAME:~$
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+

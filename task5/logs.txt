@@ -1,0 +1,55 @@
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$ . ./run_rel_18_4.sh
+waiting for server to start.... done
+server started
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$ pgbench --version
+pgbench (PostgreSQL) 18.4
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$ createdb pgbench_test -U postgres
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$ pgbench -i -s 50 pgbench_test -U postgres
+dropping old tables...
+NOTICE:  table "pgbench_accounts" does not exist, skipping
+NOTICE:  table "pgbench_branches" does not exist, skipping
+NOTICE:  table "pgbench_history" does not exist, skipping
+NOTICE:  table "pgbench_tellers" does not exist, skipping
+creating tables...
+generating data (client-side)...
+vacuuming...
+creating primary keys...
+done in 7.37 s (drop tables 0.00 s, create tables 0.01 s, client-side generate 5.07 s, vacuum 0.24 s, primary keys 2.06 s).
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$ . ./restart_rel_18_4.sh
+waiting for server to shut down.... done
+server stopped
+waiting for server to start....2026-09-19 20:57:32.228 MSK [6999] LOG:  starting PostgreSQL 18.4 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, 64-bit
+2026-09-19 20:57:32.229 MSK [6999] LOG:  listening on IPv6 address "::1", port 5432
+2026-09-19 20:57:32.229 MSK [6999] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-09-19 20:57:32.229 MSK [6999] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2026-09-19 20:57:32.232 MSK [7005] LOG:  database system was shut down at 2026-09-19 20:57:32 MSK
+2026-09-19 20:57:32.235 MSK [6999] LOG:  database system is ready to accept connections
+ done
+server started
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$ psql -U postgres -d pgbench_test
+psql (18.4)
+Type "help" for help.
+
+pgbench_test=# SHOW shared_buffers;
+ shared_buffers
+----------------
+ 512MB
+(1 row)
+
+pgbench_test=# exit
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$ pgbench -c 10 -j 2 -T 60 -U postgres -d pgbench_test
+pgbench (18.4)
+starting vacuum...end.
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 50
+query mode: simple
+number of clients: 10
+number of threads: 2
+maximum number of tries: 1
+duration: 60 s
+number of transactions actually processed: 310993
+number of failed transactions: 0 (0.000%)
+latency average = 1.929 ms
+initial connection time = 20.545 ms
+tps = 5184.766480 (without initial connection time)
+maximlinux@maximlinux-aspirea51557g:~/Desktop/pg_notes_for_myself$

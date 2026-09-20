@@ -8,8 +8,8 @@ import sys
 
 USED_VERSION = sys.argv[1]
 FILES = {
-    "pg_stat_statements OFF": f"tps_results_{USED_VERSION}_base.csv",
-    "pg_stat_statements ON": f"tps_results_{USED_VERSION}_exc.csv",
+    "pg_stat_statements OFF": f"results_{USED_VERSION}_base.csv",
+    "pg_stat_statements ON": f"results_{USED_VERSION}_exc.csv",
 }
 
 FILE_COLORS = {
@@ -61,6 +61,7 @@ for file_label, filename in FILES.items():
 
 ax.set_xlabel("Число клиентов (clients)")
 ax.set_ylabel("Среднее latency_avg")
+ax.set_title(f"График средней задержки, версия {USED_VERSION}")
 
 ax.grid(True, which="both", linestyle="--", alpha=0.5)
 ax.legend()
@@ -70,5 +71,5 @@ plt.tight_layout()
 # 4. Сохранение и показ
 # =============================================
 
-plt.savefig("lat_plot.png", dpi=200)
+plt.savefig(f"lat_plot_{USED_VERSION}.png", dpi=200)
 plt.show()

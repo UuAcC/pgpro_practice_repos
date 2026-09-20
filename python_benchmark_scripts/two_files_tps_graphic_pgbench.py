@@ -8,8 +8,8 @@ import sys
 
 USED_VERSION = sys.argv[1]
 FILES = {
-    "pg_stat_statements OFF": f"tps_results_{USED_VERSION}_base.csv",
-    "pg_stat_statements ON": f"tps_results_{USED_VERSION}_exc.csv",
+    "pg_stat_statements OFF": f"results_{USED_VERSION}_base.csv",
+    "pg_stat_statements ON": f"results_{USED_VERSION}_exc.csv",
 }
 
 FILE_COLORS = {
@@ -60,6 +60,7 @@ for file_label, filename in FILES.items():
 
 ax.set_xlabel("Число клиентов (clients)")
 ax.set_ylabel("Среднее TPS")
+ax.set_title(f"График TPS, версия {USED_VERSION}")
 
 ax.set_xscale("log", base=2)
 ax.set_xticks([1, 2, 4, 8, 16, 32, 64, 128])
@@ -73,5 +74,5 @@ plt.tight_layout()
 # 4. Сохранение и показ
 # =============================================
 
-plt.savefig("tps_plot.png", dpi=200)
+plt.savefig(f"tps_plot_{USED_VERSION}.png", dpi=200)
 plt.show()
