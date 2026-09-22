@@ -9,7 +9,7 @@ import sys
 USED_VERSION = sys.argv[1]
 FILES = {
     "pg_stat_statements OFF": f"results_{USED_VERSION}_base.csv",
-    "pg_stat_statements ON": f"results_{USED_VERSION}_exc.csv",
+    "pg_stat_statements ON": f"results_{USED_VERSION}_ext.csv",
 }
 
 FILE_COLORS = {

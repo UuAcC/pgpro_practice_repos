@@ -154,6 +154,13 @@ def main():
                     row = run_and_extract(buffers, clients, run_num)
                     writer.writerow(row)
                     f.flush()
+            if buffers == "512MB":
+                print()
+                print(">" * 41)
+                print("Ожидание охлаждения устройства (10 минут)")
+                print(">" * 41)
+                print()
+                time.sleep(600);
 
     # =============================================
     # Завершение
