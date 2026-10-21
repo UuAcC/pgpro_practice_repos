@@ -15,15 +15,15 @@
 PG_MODULE_MAGIC;
 #endif
 
-PG_FUNCTION_INFO_V1(array_flatten); // ++
-PG_FUNCTION_INFO_V1(array_chunk); // ++
+PG_FUNCTION_INFO_V1(array_flatten); // +
+PG_FUNCTION_INFO_V1(array_chunk); // +
 PG_FUNCTION_INFO_V1(array_zip);
-PG_FUNCTION_INFO_V1(array_compact); // ++
-PG_FUNCTION_INFO_V1(array_pad);
-PG_FUNCTION_INFO_V1(array_pad_arr);
-PG_FUNCTION_INFO_V1(array_slice); // ++
-PG_FUNCTION_INFO_V1(array_repeat); // ++
-PG_FUNCTION_INFO_V1(array_repeat_arr); // ++
+PG_FUNCTION_INFO_V1(array_compact); // +
+PG_FUNCTION_INFO_V1(array_pad); // +
+PG_FUNCTION_INFO_V1(array_pad_arr); // +
+PG_FUNCTION_INFO_V1(array_slice); // +
+PG_FUNCTION_INFO_V1(array_repeat); // +
+PG_FUNCTION_INFO_V1(array_repeat_arr); // +
 
 #define PG_GETARG_TYPE(n) get_fn_expr_argtype(fcinfo->flinfo, (n))
 
