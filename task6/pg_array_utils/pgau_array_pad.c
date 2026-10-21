@@ -99,8 +99,8 @@ array_pad_arr(PG_FUNCTION_ARGS)
     int16 typlen;
     bool typbyval, *arg_nulls, *res_nulls, *elem_nulls, in_the_end, dims_corr, lbs_corr, arg_arr_empty;
     char typalign;
-    int arg_nelems, elem_nelems, delta;
-    int64 size;
+    int arg_nelems, elem_nelems;
+    int64 size, delta;
     int arg_ndim, elem_ndim, *arg_dims, *elem_dims, *arg_lbs, *elem_lbs, res_ndim, *res_dims, *res_lbs;
 
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
@@ -191,10 +191,10 @@ array_pad_arr(PG_FUNCTION_ARGS)
 
     if (arg_arr_empty)
     {
-        for (int i = 0; i < res_nelems; i += elem_nelems)
+        for (Size i = 0; i < res_nelems; i += elem_nelems)
             memcpy(res_elements + i, elem_elements, datumXelem_nelems);
         if (elem_nulls)
-            for (int i = 0; i < res_nelems; i += elem_nelems)
+            for (Size i = 0; i < res_nelems; i += elem_nelems)
                 memcpy(res_nulls + i, elem_nulls, boolXelem_nelems);
     }
     else
@@ -202,7 +202,7 @@ array_pad_arr(PG_FUNCTION_ARGS)
         Size shift, fin_index;
 
         shift = ((in_the_end) ? 0 : (Size)delta) * szene;
-        fin_index = ((in_the_end) ? res_nelems : (Size)delta) * szene;
+        fin_index = (in_the_end) ? res_nelems : (Size)delta * szene;
     
         memcpy(res_elements + shift, arg_elements, arg_nelems * sizeof(Datum));
         if (arg_nulls) memcpy(res_nulls + shift, arg_nulls, arg_nelems * sizeof(bool));
