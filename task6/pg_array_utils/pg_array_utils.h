@@ -26,15 +26,26 @@ PG_FUNCTION_INFO_V1(array_repeat); // +
 PG_FUNCTION_INFO_V1(array_repeat_arr); // +
 
 #define PG_GETARG_TYPE(n) get_fn_expr_argtype(fcinfo->flinfo, (n))
+#define PG_ARRAY_IS_EMPTY(arr) ARR_NDIM(arr) == 0 || ArrayGetNItems(ARR_NDIM(arr), ARR_DIMS(arr)) == 0
 
-static inline bool 
+bool 
 pgau_is_numeric_type(Oid eltp);
-static inline bool 
+bool 
 pgau_is_text_type(Oid eltp);
-static inline bool
+bool
 pgau_numeric_is_zero(Oid eltp, Datum a);
-static inline bool
+bool
 pgau_text_is_empty(Oid eltp, Datum a);
+bool 
+pgau_array_is_empty(int ndim, int* dims);
+
+void
+appendStringInfoNChars(StringInfo str, char c, int n);
+
+char*
+pgau_datum_to_json_cstring(Datum value, Oid type);
+void
+pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims);
 
 Datum
 array_flatten(PG_FUNCTION_ARGS);
