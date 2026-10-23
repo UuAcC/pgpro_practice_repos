@@ -47,6 +47,15 @@ array_zip(PG_FUNCTION_ARGS)
 
     for (int i = 0; i < arg_arrays_count; ++i)
     {
+        Oid argtype = PG_GETARG_TYPE(i);
+        bool oiv = OidIsValid(argtype);
+        if (!oiv || !OidIsValid(get_base_element_type(argtype)))
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                    errmsg("array_zip argument %d must be an array, got %s",
+                            i + 1,
+                            (oiv) ? format_type_be(argtype) : "unknown")));
+
         arg_arrays[i] = PG_GETARG_ARRAYTYPE_P(i);
 
         arg_arrays_eltps[i] = ARR_ELEMTYPE(arg_arrays[i]);

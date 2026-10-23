@@ -11,6 +11,7 @@
 #include "utils/float.h"
 #include "utils/memutils.h"
 #include "utils/errcodes.h"
+#include "utils/lsyscache.h"
 
 #ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
