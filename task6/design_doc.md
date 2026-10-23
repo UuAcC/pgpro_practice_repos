@@ -71,8 +71,8 @@
 #### **3. array_zip**
 
 - **Назначение:** Формирование массива `jsonb`, каждый элемент которого — JSON-объект с полями `"f1"`, `"f2"`, ... по одному значению из каждого входного массива. 
-- **Прототип:** `array_zip ( anyarray, anyarray [, ...] ) → anyarray`
-- **Сигнатура (SQL):** `FUNCTION array_zip(VARIADIC anyarray) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+- **Прототип:** `array_zip ( anyarray, anyarray [, ...] ) → jsonb[]`
+- **Сигнатура (SQL):** `FUNCTION array_zip(VARIADIC anyarray) RETURNS jsonb[] LANGUAGE C IMMUTABLE STRICT`
 - **Вход/выход:**
     - Вход: один или несколько `anyarray`;
     - Выход: `jsonb[]`, длина равна максимальному значению `dims[0]` среди непустых входов; `lbs = {1}`;

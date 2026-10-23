@@ -1,0 +1,4 @@
+comment = 'pg_array_utils implements functions for arrays transformations and manipulations'
+default_version = '1.0'
+module_pathname = '$libdir/pg_array_utils'
+relocatable = true
