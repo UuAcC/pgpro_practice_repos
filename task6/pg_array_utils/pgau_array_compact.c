@@ -31,16 +31,20 @@ array_compact(PG_FUNCTION_ARGS)
         }
         if (wrong_mode) 
         {
-            elog(ERROR, "Impossible to use %s mode with %s array", working_mode, format_type_be(element_type));
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("Impossible to use %s mode with %s array", working_mode, format_type_be(element_type))));
         }
-        if (ARR_NDIM(arg_array) == 0 || ArrayGetNItems(ARR_NDIM(arg_array), ARR_DIMS(arg_array)) == 0) // empty arg_array
+        if (PG_ARRAY_IS_EMPTY(arg_array)) // empty arg_array
         {
             pfree(working_mode);
             PG_RETURN_ARRAYTYPE_P(arg_array);
         }
         else if (ARR_NDIM(arg_array) > 1) // not a one-dimensional arg_array
         {
-            elog(ERROR, "The argument array must be one-dimensional");
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("The argument array must be one-dimensional")));
         }
 
         ArrayType *res_array;
@@ -150,5 +154,11 @@ array_compact(PG_FUNCTION_ARGS)
         pfree(working_mode);
         PG_RETURN_ARRAYTYPE_P(res_array);
     }
-    else elog(ERROR, "%s is not an existing mode", working_mode);
+    else 
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("%s is not an existing mode", working_mode)));
+    }
 }
+

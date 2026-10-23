@@ -25,9 +25,11 @@ array_slice(PG_FUNCTION_ARGS)
     step = PG_GETARG_INT32(3);
 
     ndim = ARR_NDIM(arg_array);
-    if (ndim == 0 || ArrayGetNItems(ndim, ARR_DIMS(arg_array)) == 0)
+    if (PG_ARRAY_IS_EMPTY(arg_array))
     {
-        elog(ERROR, "The argument array can't be empty");
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The argument array can't be empty")));
     }
     res_dims = palloc(sizeof(int) * ndim);
     res_lbs  = palloc(sizeof(int) * ndim);
@@ -35,14 +37,26 @@ array_slice(PG_FUNCTION_ARGS)
     memcpy(res_lbs,  ARR_LBOUND(arg_array), sizeof(int) * ndim);
 
     if (step <= 0) 
-        elog(ERROR, "The step should be greater than zero");
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The step should be greater than zero")));
+    }
 
     start = (start > 0) ? start - 1 : start + res_dims[0];
     end = (end > 0) ? end - 1 : end + res_dims[0];
     if (start <= 0 || start > end) 
-        elog(ERROR, "The start index should be between 1 and the end index");
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),
+                 errmsg("The start index should be between 1 and the end index")));
+    }
     if (end >= res_dims[0]) 
-        elog(ERROR, "The end index should be between the start index and the lenght of the first dimension of the array");
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),
+                 errmsg("The end index should be between the start index and the lenght of the first dimension of the array")));
+    }
 
     eltp = ARR_ELEMTYPE(arg_array);
     get_typlenbyvalalign(eltp, &typlen, &typbyval, &typalign);
@@ -81,3 +95,4 @@ array_slice(PG_FUNCTION_ARGS)
 
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
+

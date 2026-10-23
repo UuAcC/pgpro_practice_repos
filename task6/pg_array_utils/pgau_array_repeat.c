@@ -14,11 +14,19 @@ array_repeat(PG_FUNCTION_ARGS)
     eltp = PG_GETARG_TYPE(0);
     count = PG_GETARG_INT32(1);
     if (count < 0)
-        elog(ERROR, "Count can't be negative");
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("Count can't be negative")));
+    }
     if (count == 0)
         PG_RETURN_ARRAYTYPE_P(construct_empty_array(eltp));
     if (count > MaxAllocSize / sizeof(Datum))
-        elog(ERROR, "Resulting array is too large");
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                 errmsg("Resulting array is too large")));
+    }
     res_elems = palloc(sizeof(Datum) * count);
     for (int i = 0; i < count; ++i)
         res_elems[i] = arg_element;
@@ -44,8 +52,12 @@ array_repeat_arr(PG_FUNCTION_ARGS)
     eltp = ARR_ELEMTYPE(arg_array);
     count = PG_GETARG_INT32(1);
     if (count < 0)
-        elog(ERROR, "Count can't be negative");
-    if (count == 0 || ARR_NDIM(arg_array) == 0 || ArrayGetNItems(ARR_NDIM(arg_array), ARR_DIMS(arg_array)) == 0)
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("Count can't be negative")));
+    }
+    if (count == 0 || PG_ARRAY_IS_EMPTY(arg_array))
         PG_RETURN_ARRAYTYPE_P(construct_empty_array(eltp));
 
     arg_ndim = ARR_NDIM(arg_array);
@@ -56,7 +68,11 @@ array_repeat_arr(PG_FUNCTION_ARGS)
     deconstruct_array(arg_array, eltp, typlen, typbyval, typalign, &arg_elements, &arg_nulls, &arg_nelems);
 
     if (arg_nelems > (int) (MaxAllocSize / sizeof(Datum) / count))
-        elog(ERROR, "Resulting array is too large");
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                 errmsg("Resulting array is too large")));
+    }
     
     res_nelems = (Size)arg_nelems * (Size)count;
     res_elements = palloc(sizeof(Datum) * res_nelems);
@@ -99,3 +115,4 @@ array_repeat_arr(PG_FUNCTION_ARGS)
 
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
+

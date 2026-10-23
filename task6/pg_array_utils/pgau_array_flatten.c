@@ -29,3 +29,4 @@ array_flatten(PG_FUNCTION_ARGS)
     
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
+

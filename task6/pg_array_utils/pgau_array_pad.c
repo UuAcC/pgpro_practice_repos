@@ -15,13 +15,17 @@ array_pad(PG_FUNCTION_ARGS)
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
     if (ARR_NDIM(arg_array) > 1)
     {
-        elog(ERROR, "The argument array should be one-dimensioned");
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The argument array should be one-dimensioned")));
     }
 
     eltp = PG_GETARG_TYPE(2);
     if (eltp != ARR_ELEMTYPE(arg_array))
     {
-        elog(ERROR, "The element to add should have the same type as array elements");
+        ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                 errmsg("The element to add should have the same type as array elements")));
     }
     element = PG_GETARG_DATUM(2);
 
@@ -36,12 +40,14 @@ array_pad(PG_FUNCTION_ARGS)
     res_nelems *= (in_the_end) ? 1 : -1;
     if (res_nelems > MaxAllocSize / sizeof(Datum))
     {
-        elog(ERROR, "The resulting array is too large");
+        ereport(ERROR,
+                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                 errmsg("The resulting array is too large")));
     }
 
     res_elements = palloc(sizeof(Datum) * res_nelems);
     get_typlenbyvalalign(eltp, &typlen, &typbyval, &typalign);
-    if (ARR_NDIM(arg_array) == 0 || ArrayGetNItems(ARR_NDIM(arg_array), ARR_DIMS(arg_array)) == 0)
+    if (PG_ARRAY_IS_EMPTY(arg_array))
     {
         for (int i = 0; i < res_nelems; ++i)
         {
@@ -61,7 +67,9 @@ array_pad(PG_FUNCTION_ARGS)
         fin_index = (in_the_end) ? res_nelems : delta;
         if (delta < 0)
         {
-            elog(ERROR, "The new lenght of the array can't be less than current");
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("The new lenght of the array can't be less than current")));
         }
 
         memcpy(res_elements + shift, arg_elements, arg_nelems * sizeof(Datum));
@@ -118,37 +126,47 @@ array_pad_arr(PG_FUNCTION_ARGS)
 
     arg_nelems = 0; delta = size;
 
-    if (elem_ndim == 0 || ArrayGetNItems(elem_ndim, elem_dims) == 0)
+    if (pgau_array_is_empty(elem_ndim, elem_dims))
     {
-        elog(ERROR, "The array being added to the original array shouldn't be empty");
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The array being added to the original array shouldn't be empty")));
     }
     eltp = ARR_ELEMTYPE(elem_array);
     if (eltp != ARR_ELEMTYPE(arg_array))
     {
-        elog(ERROR, "The array being added to the original array should have the same type as the original");
+        ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                 errmsg("The array being added to the original array should have the same type as the original")));
     }
     get_typlenbyvalalign(eltp, &typlen, &typbyval, &typalign);
 
-    arg_arr_empty = arg_ndim == 0 || ArrayGetNItems(arg_ndim, arg_dims) == 0;
+    arg_arr_empty = pgau_array_is_empty(arg_ndim, arg_dims);
     if (!arg_arr_empty)
     {
         int ind;
 
         if (arg_ndim - 1 != elem_ndim)
         {
-            elog(ERROR, "The array being added to the original array should have one dimension fewer than the original");
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("The array being added to the original array should have one dimension fewer than the original")));
         }
         dims_corr = true; ind = 0;
         while (ind < elem_ndim && dims_corr) { dims_corr &= arg_dims[ind + 1] == elem_dims[ind]; ++ind; }
         if (!dims_corr) 
         {
-            elog(ERROR, "The array being added to the original array should have a numbers of elements equal to the numbers of elements in the original array in all dimensions except the first");
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("The array being added to the original array should have a numbers of elements equal to the numbers of elements in the original array in all dimensions except the first")));
         }
         lbs_corr = true; ind = 0;
         while (ind < elem_ndim && lbs_corr) { lbs_corr &= arg_lbs[ind + 1] == elem_lbs[ind]; ++ind; }
         if (!lbs_corr) 
         {
-            elog(ERROR, "The array being added to the original array should have a lower bounds equal to the lower bounds in the original array in all dimensions except the first");
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("The array being added to the original array should have a lower bounds equal to the lower bounds in the original array in all dimensions except the first")));
         }
         deconstruct_array(arg_array, eltp, typlen, typbyval, typalign, &arg_elements, &arg_nulls, &arg_nelems);
         delta = size - arg_dims[0];
@@ -157,11 +175,15 @@ array_pad_arr(PG_FUNCTION_ARGS)
     
     if (delta < 0)
     {
-        elog(ERROR, "The new lenght of the array can't be less than current");
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The new lenght of the array can't be less than current")));
     }
     if (size > (int)(MaxAllocSize / sizeof(Datum) / elem_nelems))
     {
-        elog(ERROR, "Resulting array is too large"); 
+        ereport(ERROR,
+                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                 errmsg("Resulting array is too large"))); 
     }
     if (size == 0) 
     {

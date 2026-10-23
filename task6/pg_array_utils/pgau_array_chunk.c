@@ -17,11 +17,15 @@ array_chunk(PG_FUNCTION_ARGS)
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
     if (ARR_NDIM(arg_array) > 1)
     {
-        elog(ERROR, "The argument array should be one-dimensional");
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The argument array should be one-dimensional")));
     }
-    if (ARR_NDIM(arg_array) == 0 || ArrayGetNItems(ARR_NDIM(arg_array), ARR_DIMS(arg_array)) == 0)
+    if (PG_ARRAY_IS_EMPTY(arg_array))
     {
-        elog(ERROR, "The argument array can't be empty");
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The argument array can't be empty")));
     }
     element_type = ARR_ELEMTYPE(arg_array);
     get_typlenbyvalalign(element_type, &typlen, &typbyval, &typalign);
@@ -44,3 +48,4 @@ array_chunk(PG_FUNCTION_ARGS)
     pfree(nulls);
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
+

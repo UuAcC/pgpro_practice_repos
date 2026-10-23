@@ -22,7 +22,9 @@ array_zip(PG_FUNCTION_ARGS)
 
     if (arg_arrays_count == 0)
     {
-        elog(ERROR, "array_zip requires at least one array");
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("array_zip requires at least one array")));
     }
 
     arg_arrays = palloc(sizeof(ArrayType*) * arg_arrays_count);

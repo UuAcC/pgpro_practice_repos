@@ -1,47 +1,9 @@
 #include "pg_array_utils.h"
 
 /*
-Checks does the type represent a number from a human perspective (int, float, etc.)
+Compares the value (A) of the type (ELTP) which represents a number from a human perspective (int, float, etc.) to zero.
 */
-const bool 
-pgau_is_numeric_type(Oid eltp)
-{
-    switch(eltp)
-    {
-        case INT2OID:
-        case INT4OID:
-        case INT8OID:
-        case FLOAT4OID:
-        case FLOAT8OID:
-        case NUMERICOID:
-        case OIDOID:
-        case MONEYOID: return true;
-        default: return false;
-    }
-}
-
-/*
-Checks does the type represent a text from a human perspective (text, varchar, bytea, etc.)
-*/
-const bool 
-pgau_is_text_type(Oid eltp)
-{
-    switch(eltp)
-    {
-        case TEXTOID:
-        case VARCHAROID:
-        case BPCHAROID:
-        case CHAROID:
-        case NAMEOID:
-        case BYTEAOID: return true;
-        default: return false;
-    }
-}
-
-/*
-Compares the value (A) of the type (ELTP) which represents a number from a human perspective (int, float, etc.) to zero
-*/
-const bool
+bool
 pgau_numeric_is_zero(Oid eltp, Datum a) 
 {
     switch(eltp)
@@ -60,15 +22,17 @@ pgau_numeric_is_zero(Oid eltp, Datum a)
         }
         default: 
         { 
-            elog(ERROR, "Can't compare %s to zero", format_type_be(eltp)); 
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                     errmsg("Can't compare %s to zero", format_type_be(eltp)))); 
         }
     }
 }
 
 /*
-Compares the value (A) of the type (ELTP) which represents a text from a human perspective (text, varchar, bytea, etc.) to an empty string
+Compares the value (A) of the type (ELTP) which represents a text from a human perspective (text, varchar, bytea, etc.) to an empty string.
 */
-const bool
+bool
 pgau_text_is_empty(Oid eltp, Datum a)
 {
     switch(eltp)
@@ -87,30 +51,16 @@ pgau_text_is_empty(Oid eltp, Datum a)
         case BYTEAOID: { return VARSIZE_ANY_EXHDR(DatumGetByteaPP(a)) == 0; }
         default:
         {
-            elog(ERROR, "Can't compare %s to empty string (\'\')", format_type_be(eltp)); 
+            ereport(ERROR,
+                    (errcode(ERRCODE_DATATYPE_MISMATCH),
+                     errmsg("Can't compare %s to empty string (\"\")", format_type_be(eltp)))); 
         }
     }
 }
 
-const bool 
-pgau_array_is_empty(int ndim, int* dims)
-{
-    return ndim == 0 || ArrayGetNItems(ndim, dims) == 0;
-}
-
 /*
-Appends N chars C into StringInfo STR
+Converts the value (A) of the type (TYPE) to char* in json format.
 */
-void
-appendStringInfoNChars(StringInfo str, char c, int n)
-{
-    if (n <= 0) return;
-    enlargeStringInfo(str, n);
-    memset(str->data + str->len, c, n);
-    str->len += n;
-    str->data[str->len] = '\0';
-}
-
 char*
 pgau_datum_to_json_cstring(Datum value, Oid type)
 {
@@ -139,6 +89,11 @@ pgau_datum_to_json_cstring(Datum value, Oid type)
     return result;
 }
 
+/*
+Converts anyarray to StringInfo. 
+Requires arrays of elements (ELEMS) and nulls (NULLS), the type (ELTP) of the anyarray element, number of elements 
+(NELEMS) and dimensions (NDIM) and the pointer to the array of dimensions sizes (DIMS).
+*/
 void
 pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims)
 {
@@ -180,7 +135,7 @@ pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, i
     pfree(cnts);
 }
 
-/*
+/* 
 
 {{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}}
    0 1 2   3 4 5     6 7 8   9  10 11
