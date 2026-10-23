@@ -32,8 +32,17 @@ array_pad(PG_FUNCTION_ARGS)
     res_nelems = PG_GETARG_INT32(1);
     if (res_nelems == 0) 
     {
-        res_array = construct_empty_array(eltp);
-        PG_RETURN_ARRAYTYPE_P(res_array);
+        if (PG_ARRAY_IS_EMPTY(arg_array))
+        {
+            res_array = construct_empty_array(eltp);
+            PG_RETURN_ARRAYTYPE_P(res_array);
+        }
+        else
+        {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                     errmsg("The new lenght of the array can't be less than current")));
+        }
     }
 
     in_the_end = res_nelems > 0;

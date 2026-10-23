@@ -85,11 +85,11 @@ array_compact(PG_FUNCTION_ARGS)
                 ((pgau_is_text_type(element_type)) ? pgau_text_is_empty : NULL);
             if (strcmp(working_mode, "falsy") == 0)
             {
-                if (!cmp_function) // element_type == BOOLOID
+                if (!cmp_function) // element_type == BOOLOID || element_type == (neither text nor numeric type)
                 {
                     for (int i = 0; i < arg_nelems; ++i)
                     {
-                        if (arg_nulls[i] || !DatumGetBool(arg_elements[i])) continue;
+                        if (arg_nulls[i] || (element_type == BOOLOID && !DatumGetBool(arg_elements[i]))) continue;
                         res_elems[new_nelems] = arg_elements[i];
                         ++new_nelems;
                     }

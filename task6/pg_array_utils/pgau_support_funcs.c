@@ -128,9 +128,13 @@ pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, i
         appendStringInfoChar(dest, ',');
         appendStringInfoNChars(dest, '{', cnt_fbr);
     }
-    char* last = pgau_datum_to_json_cstring(elems[nelems - 1], eltp);
-    appendStringInfoString(dest, last);
-    pfree(last);
+    if (nulls != NULL && nulls[nelems - 1]) appendStringInfoString(dest, "NULL");
+    else 
+    {
+        char* last = pgau_datum_to_json_cstring(elems[nelems - 1], eltp);
+        appendStringInfoString(dest, last);
+        pfree(last);
+    }
     appendStringInfoNChars(dest, '}', ndim);
     pfree(cnts);
 }

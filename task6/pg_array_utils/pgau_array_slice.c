@@ -45,7 +45,7 @@ array_slice(PG_FUNCTION_ARGS)
 
     start = (start > 0) ? start - 1 : start + res_dims[0];
     end = (end > 0) ? end - 1 : end + res_dims[0];
-    if (start <= 0 || start > end) 
+    if (start < 0 || start > end) 
     {
         ereport(ERROR,
                 (errcode(ERRCODE_ARRAY_SUBSCRIPT_ERROR),

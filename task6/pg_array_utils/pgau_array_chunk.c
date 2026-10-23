@@ -32,6 +32,12 @@ array_chunk(PG_FUNCTION_ARGS)
     deconstruct_array(arg_array, element_type, typlen, typbyval, typalign, &elements, &nulls, &arg_nelems);
 
     chunk_size = PG_GETARG_INT32(1);
+    if (chunk_size <= 0)
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                 errmsg("The chunk size should be greater than zero")));
+    }
     chunks_cnt = (arg_nelems + chunk_size - 1) / chunk_size;
     new_size = chunk_size * chunks_cnt;
 
