@@ -97,20 +97,24 @@ Requires arrays of elements (ELEMS) and nulls (NULLS), the type (ELTP) of the an
 void
 pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims)
 {
+    int* cnts;
+    
     if (nelems <= 0)
     {
         appendStringInfoString(dest, "{}");
         return;
     }
     appendStringInfoNChars(dest, '{', ndim);
-    int* cnts = palloc0(sizeof(int) * ndim);
+    cnts = palloc0(sizeof(int) * ndim);
     for (int i = 0; i < nelems - 1; ++i) 
     {
         int cnt_fbr = 0;
-        if (nulls != NULL && nulls[i]) appendStringInfoString(dest, "NULL");
+
+        if (nulls != NULL && nulls[i]) appendStringInfoString(dest, "null");
         else 
         {
             char* str = pgau_datum_to_json_cstring(elems[i], eltp);
+
             appendStringInfoString(dest, str);
             pfree(str);
         }
@@ -128,10 +132,11 @@ pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, i
         appendStringInfoChar(dest, ',');
         appendStringInfoNChars(dest, '{', cnt_fbr);
     }
-    if (nulls != NULL && nulls[nelems - 1]) appendStringInfoString(dest, "NULL");
+    if (nulls != NULL && nulls[nelems - 1]) appendStringInfoString(dest, "null");
     else 
     {
         char* last = pgau_datum_to_json_cstring(elems[nelems - 1], eltp);
+
         appendStringInfoString(dest, last);
         pfree(last);
     }

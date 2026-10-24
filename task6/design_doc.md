@@ -43,7 +43,7 @@
 
 - **Назначение:** Разбиение непустого одномерного массива на двумерный массив чанков заданного размера. Каждый чанк имеет длину `size`; если элементов не хватает, чанк дополняется NULL-элементами.
 - **Прототип:** `array_chunk ( anyarray, size integer ) → anyarray`
-- **Сигнатура (SQL):** `FUNCTION array_chunk(anyarray, size integer) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+- **Сигнатура (SQL):** `FUNCTION array_chunk(anyarray, _size integer) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
 - **Вход/выход:**
     - Вход: непустой одномерный `anyarray`, `size integer`;
     - Выход: двумерный `anyarray` с размерностями `dims = {(n + size - 1) / size, size}` и нижними границами `lbs = {1, 1}`, где `n` — число элементов входа;
@@ -106,7 +106,7 @@
     - `'empty'` — удалить пустые строки/bytea и т.п. ("");
     - `'falsy'` — удалить NULL, false, 0, "".
 - **Прототип:** `array_compact ( anyarray, mode text DEFAULT 'null' ) → anyarray`
-- **Сигнатура (SQL):** `FUNCTION array_compact(anyarray, mode text DEFAULT 'null') RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+- **Сигнатура (SQL):** `FUNCTION array_compact(anyarray, _mode text DEFAULT 'null') RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
 - **Вход/выход:**
     - Вход: `anyarray`, `mode text` (сравнение точное, без приведения регистра);
     - Сначала проверяется существование режима и соответствие режима типу элементов;
@@ -149,11 +149,11 @@
 
 - **Назначение:** Дополнение массива до указанной длины. Положительный `size` — дополнение в конец, отрицательный — в начало.
 - **Прототипы:**
-    1. `array_pad ( anyarray, size integer, value anyelement ) → anyarray`
+    1. `array_pad ( anyarray, size integer, value anynonarray ) → anyarray`
     2. `array_pad_arr ( anyarray, size integer, value anyarray ) → anyarray`
 - **Сигнатуры (SQL):**
-    1. `FUNCTION array_pad(anyarray, size integer, value anyelement) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
-    2. `FUNCTION array_pad(anyarray, size integer, value anyarray) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+    1. `FUNCTION array_pad(anyarray, _size integer, _value anynonarray) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+    2. `FUNCTION array_pad(anyarray, _size integer, _value anyarray) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
 - **Предполагаемые тесты:**
     - Обычный случай — несколько тестов:
         - Разные типы элементов массива;
@@ -173,10 +173,10 @@
     - N-мерный массив — штатно для `array_pad_arr` при согласованной форме;
     - Массив с NULL-элементами — штатно.
 
-##### 5.1. `array_pad(anyarray, integer, anyelement)`
+##### 5.1. `array_pad(anyarray, integer, anynonarray)`
 
 - **Вход/выход:**
-    - Вход: массив 0D/1D, `size integer`, `value anyelement`;
+    - Вход: массив 0D/1D, `size integer`, `value anynonarray`;
     - Тип `value` должен совпадать с типом элемента массива;
     - `длина исходного массива <= |size| <= MaxAllocSize / sizeof(Datum)`;
     - Выход: одномерный массив длины `|size|`;
@@ -211,7 +211,7 @@
 
 - **Назначение:** Нахождение среза массива по первому измерению с указанным шагом.
 - **Прототип:** `array_slice ( anyarray, start integer, end integer, step integer DEFAULT 1 ) → anyarray`
-- **Сигнатура (SQL):** `FUNCTION array_slice(anyarray, start integer, end integer, step integer DEFAULT 1) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+- **Сигнатура (SQL):** `FUNCTION array_slice(anyarray, _start integer, _end integer, _step integer DEFAULT 1) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
 - **Вход/выход:**
     - Вход: непустой `anyarray`, `start integer`, `end integer`, `step integer`;
     - `start`/`end` — 1-based (индексация с единицы); положительные индексы считаются с начала, отрицательные — с конца (`-1` — последний элемент);
@@ -252,11 +252,11 @@
 
 - **Назначение:** Создание массива из заданного элемента или массива, повторённого `count` раз.
 - **Прототипы:**
-    1. `array_repeat ( anyelement, count integer ) → anyarray`
+    1. `array_repeat ( anynonarray, count integer ) → anyarray`
     2. `array_repeat_arr ( anyarray, count integer ) → anyarray`
 - **Сигнатуры (SQL):**
-    1. `FUNCTION array_repeat(anyelement, count integer) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
-    2. `FUNCTION array_repeat(anyarray, count integer) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+    1. `FUNCTION array_repeat(anynonarray, _count integer) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
+    2. `FUNCTION array_repeat(anyarray, _count integer) RETURNS anyarray LANGUAGE C IMMUTABLE STRICT`
 - **Предполагаемые тесты:**
     - Обычный случай — несколько тестов:
         - Разные типы элементов массива;
@@ -267,10 +267,10 @@
     - Большое значение `count`;
     - Ошибка ввода (`count < 0`).
 
-##### 7.1. `array_repeat(anyelement, integer)`
+##### 7.1. `array_repeat(anynonarray, integer)`
 
 - **Вход/выход:**
-    - Вход: `anyelement`, `count integer`;
+    - Вход: `anynonarray`, `count integer`;
     - `0 =< count =< MaxAllocSize / sizeof(Datum)`;
     - Выход: одномерный массив длины `count`, `lbs = 1`, все элементы — заданное значение;
     - `count = 0` — пустой массив.

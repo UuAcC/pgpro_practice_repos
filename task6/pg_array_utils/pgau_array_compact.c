@@ -1,5 +1,7 @@
 #include "pg_array_utils.h"
 
+PG_FUNCTION_INFO_V1(array_compact);
+
 Datum
 array_compact(PG_FUNCTION_ARGS)
 {
@@ -11,8 +13,13 @@ array_compact(PG_FUNCTION_ARGS)
         strcmp(working_mode, "zero") == 0 || 
         strcmp(working_mode, "empty") == 0)
     {
-        ArrayType *arg_array;
+        ArrayType *arg_array, *res_array;
         Oid element_type;
+        int16 typlen;
+        bool typbyval, *arg_nulls;
+        char typalign;
+        Datum *arg_elements, *res_elems;
+        int arg_nelems, new_nelems;
         bool wrong_mode = false;
         
         arg_array = PG_GETARG_ARRAYTYPE_P(0);
@@ -46,13 +53,6 @@ array_compact(PG_FUNCTION_ARGS)
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                      errmsg("The argument array must be one-dimensional")));
         }
-
-        ArrayType *res_array;
-        int16 typlen;
-        bool typbyval, *arg_nulls;
-        char typalign;
-        Datum *arg_elements, *res_elems;
-        int arg_nelems, new_nelems;
 
         get_typlenbyvalalign(element_type, &typlen, &typbyval, &typalign);
         deconstruct_array(arg_array, element_type, typlen, typbyval, typalign, &arg_elements, &arg_nulls, &arg_nelems);
@@ -117,7 +117,9 @@ array_compact(PG_FUNCTION_ARGS)
             }
             else // element_type == text or numeric type, but res_array can have NULLs
             {
+                int dims[1], lbs[1];
                 bool *res_nulls = palloc0(sizeof(bool) * arg_nelems);
+
                 for (int i = 0; i < arg_nelems; ++i)
                 {
                     if (!arg_nulls[i])
@@ -143,7 +145,7 @@ array_compact(PG_FUNCTION_ARGS)
                 } 
                 // res_elems = repalloc(res_elems, sizeof(Datum) * new_nelems);
                 // res_nulls = repalloc(res_nulls, sizeof(bool) * new_nelems);
-                int dims[1] = {new_nelems}, lbs[1] = {1};
+                dims[0] = new_nelems; lbs[0] = 1;
                 res_array = construct_md_array(res_elems, res_nulls, 1, dims, lbs, element_type, typlen, typbyval, typalign);
                 pfree(res_nulls);
             }

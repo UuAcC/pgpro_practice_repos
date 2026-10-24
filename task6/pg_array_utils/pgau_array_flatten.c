@@ -1,5 +1,7 @@
 #include "pg_array_utils.h"
 
+PG_FUNCTION_INFO_V1(array_flatten);
+
 Datum
 array_flatten(PG_FUNCTION_ARGS)
 {

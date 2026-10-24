@@ -4,7 +4,7 @@
 #include "fmgr.h"
 #include "utils/array.h"
 #include <string.h>
-#include "pg_type_d.h"
+#include "catalog/pg_type.h"
 #include "utils/builtins.h"
 #include "utils/numeric.h"
 #include "utils/datum.h"
@@ -12,20 +12,7 @@
 #include "utils/memutils.h"
 #include "utils/errcodes.h"
 #include "utils/lsyscache.h"
-
-#ifdef PG_MODULE_MAGIC
-PG_MODULE_MAGIC;
-#endif
-
-PG_FUNCTION_INFO_V1(array_flatten);
-PG_FUNCTION_INFO_V1(array_chunk);
-PG_FUNCTION_INFO_V1(array_zip);
-PG_FUNCTION_INFO_V1(array_compact);
-PG_FUNCTION_INFO_V1(array_pad);
-PG_FUNCTION_INFO_V1(array_pad_arr);
-PG_FUNCTION_INFO_V1(array_slice);
-PG_FUNCTION_INFO_V1(array_repeat);
-PG_FUNCTION_INFO_V1(array_repeat_arr);
+#include "utils/json.h"
 
 #define PG_GETARG_TYPE(n) get_fn_expr_argtype(fcinfo->flinfo, (n))
 #define PG_ARRAY_IS_EMPTY(arr) ARR_NDIM(arr) == 0 || ArrayGetNItems(ARR_NDIM(arr), ARR_DIMS(arr)) == 0

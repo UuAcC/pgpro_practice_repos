@@ -1,5 +1,7 @@
 #include "pg_array_utils.h"
 
+PG_FUNCTION_INFO_V1(array_chunk);
+
 Datum
 array_chunk(PG_FUNCTION_ARGS) 
 {
@@ -12,7 +14,7 @@ array_chunk(PG_FUNCTION_ARGS)
 
     Datum *elements;
     bool *nulls;
-    int arg_nelems, chunk_size, chunks_cnt, new_size;
+    int arg_nelems, chunk_size, chunks_cnt, new_size, dims[2], lbs[2];
 
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
     if (ARR_NDIM(arg_array) > 1)
@@ -41,8 +43,8 @@ array_chunk(PG_FUNCTION_ARGS)
     chunks_cnt = (arg_nelems + chunk_size - 1) / chunk_size;
     new_size = chunk_size * chunks_cnt;
 
-    int dims[2] = {chunks_cnt, chunk_size};
-    int lbs[2] = {1, 1};
+    dims[0] = chunks_cnt; dims[1] = chunk_size;
+    lbs[0] = 1; lbs[1] = 1;
 
     elements = repalloc(elements, sizeof(Datum) * new_size);
     nulls = repalloc(nulls, sizeof(bool) * new_size);

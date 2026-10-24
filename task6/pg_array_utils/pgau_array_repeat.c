@@ -1,5 +1,8 @@
 #include "pg_array_utils.h"
 
+PG_FUNCTION_INFO_V1(array_repeat);
+PG_FUNCTION_INFO_V1(array_repeat_arr);
+
 Datum
 array_repeat(PG_FUNCTION_ARGS)
 {

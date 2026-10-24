@@ -1,5 +1,7 @@
 #include "pg_array_utils.h"
 
+PG_FUNCTION_INFO_V1(array_slice);
+
 /*
  * anyarray array_slice ( anyarray, int start, int end, int step = 1 )
  *
@@ -18,6 +20,8 @@ array_slice(PG_FUNCTION_ARGS)
     Datum *arg_elements, *res_elements;
     int arg_nelems, step, ndim, *res_dims, *res_lbs;
     int64 start, end;
+    Size element_size, res_index, res_nelems;
+    Size _start, _end, _step, datumXelement_size, boolXelement_size;
 
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
     start = PG_GETARG_INT32(1);
@@ -63,7 +67,7 @@ array_slice(PG_FUNCTION_ARGS)
     deconstruct_array(arg_array, eltp, typlen, typbyval, typalign, &arg_elements, &arg_nulls, &arg_nelems);
     (void)arg_nelems;
 
-    Size element_size = 1, res_index = 0, res_nelems;
+    element_size = 1; res_index = 0;
     for (int i = 1; i < ndim; ++i) element_size *= (Size)res_dims[i];
     res_dims[0] = (end - start) / step + 1;
     res_lbs[0] = 1;
@@ -71,11 +75,11 @@ array_slice(PG_FUNCTION_ARGS)
     res_elements = palloc(sizeof(Datum) * res_nelems);
     res_nulls = palloc(sizeof(bool) * res_nelems);
     
-    Size _start = start * element_size,
-        _end = end * element_size,
-        _step = step * element_size,
-        datumXelement_size = sizeof(Datum) * element_size,
-        boolXelement_size = sizeof(bool) * element_size;
+    _start = start * element_size;
+    _end = end * element_size;
+    _step = step * element_size;
+    datumXelement_size = sizeof(Datum) * element_size;
+    boolXelement_size = sizeof(bool) * element_size;
     for (Size i = _start; i <= _end; i = i + _step)
     {
         memcpy(res_elements + res_index, arg_elements + i, datumXelement_size);

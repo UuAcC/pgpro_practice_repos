@@ -1,5 +1,8 @@
 #include "pg_array_utils.h"
 
+PG_FUNCTION_INFO_V1(array_pad);
+PG_FUNCTION_INFO_V1(array_pad_arr);
+
 Datum
 array_pad(PG_FUNCTION_ARGS)
 {
@@ -7,7 +10,7 @@ array_pad(PG_FUNCTION_ARGS)
     Datum *arg_elements, *res_elements, element;
     Oid eltp;
     int16 typlen;
-    bool typbyval, *arg_nulls, *res_nulls, in_the_end;
+    bool typbyval, *arg_nulls, in_the_end;
     char typalign;
     int arg_nelems;
     int64 res_nelems;
@@ -66,7 +69,7 @@ array_pad(PG_FUNCTION_ARGS)
     }
     else
     {
-        int delta, fin_index, shift;
+        int delta, fin_index, shift, dims[1], lbs[1];
         bool* res_nulls = NULL;
 
         deconstruct_array(arg_array, eltp, typlen, typbyval, typalign, &arg_elements, &arg_nulls, &arg_nelems);
@@ -91,8 +94,8 @@ array_pad(PG_FUNCTION_ARGS)
         {
             res_elements[i] = element;
         }
-        int dims[1] = { res_nelems };
-        int lbs[1]  = { ARR_LBOUND(arg_array)[0] };
+        dims[0] = res_nelems;
+        lbs[0]  = ARR_LBOUND(arg_array)[0];
         res_array = construct_md_array(res_elements, res_nulls, 1, dims, lbs, eltp, typlen, typbyval, typalign);
         
         pfree(arg_elements);
@@ -119,6 +122,7 @@ array_pad_arr(PG_FUNCTION_ARGS)
     int arg_nelems, elem_nelems;
     int64 size, delta;
     int arg_ndim, elem_ndim, *arg_dims, *elem_dims, *arg_lbs, *elem_lbs, res_ndim, *res_dims, *res_lbs;
+    Size szene, res_nelems, datumXelem_nelems, boolXelem_nelems;
 
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
     size = PG_GETARG_INT32(1);
@@ -202,10 +206,10 @@ array_pad_arr(PG_FUNCTION_ARGS)
         PG_RETURN_ARRAYTYPE_P(res_array);
     }
 
-    Size szene = (Size)elem_nelems;
-    Size res_nelems = (Size)size * szene;
-    Size datumXelem_nelems = sizeof(Datum) * szene,
-        boolXelem_nelems = sizeof(bool) * szene;
+    szene = (Size)elem_nelems;
+    res_nelems = (Size)size * szene;
+    datumXelem_nelems = sizeof(Datum) * szene;
+    boolXelem_nelems = sizeof(bool) * szene;
     
     res_elements = palloc(sizeof(Datum) * res_nelems);
     res_nulls = (elem_nulls || (!arg_arr_empty && arg_nulls)) ? palloc0(sizeof(bool) * res_nelems) : NULL;

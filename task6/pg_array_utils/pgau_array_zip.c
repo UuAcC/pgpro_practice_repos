@@ -1,5 +1,7 @@
 #include "pg_array_utils.h"
 
+PG_FUNCTION_INFO_V1(array_zip);
+
 Datum
 array_zip(PG_FUNCTION_ARGS)
 {
@@ -19,6 +21,11 @@ array_zip(PG_FUNCTION_ARGS)
     int** arg_arrays_dims;
     int max_array_len;
     int arg_arrays_count = PG_NARGS();
+
+    int16 res_typlen;
+    bool  res_typbyval;
+    char  res_typalign;
+    int res_dims[1], res_lbs[1];
 
     if (arg_arrays_count == 0)
     {
@@ -49,6 +56,7 @@ array_zip(PG_FUNCTION_ARGS)
     {
         Oid argtype = PG_GETARG_TYPE(i);
         bool oiv = OidIsValid(argtype);
+        
         if (!oiv || !OidIsValid(get_base_element_type(argtype)))
             ereport(ERROR,
                     (errcode(ERRCODE_DATATYPE_MISMATCH),
@@ -111,29 +119,32 @@ array_zip(PG_FUNCTION_ARGS)
     for (int i = 0; i < max_array_len; ++i)
     {
         StringInfoData buf;
+
         initStringInfo(&buf);
         appendStringInfoChar(&buf, '{');
         for (int j = 0; j < arg_arrays_count; ++j)
         {
-            if (j > 0) appendStringInfoChar(&buf, ',');
             char fstr[32];
+
+            if (j > 0) appendStringInfoChar(&buf, ',');
             sprintf(fstr, "\"f%d\":", j + 1);
             appendStringInfoString(&buf, fstr);
             if (arg_arrays_empty[j])
             {
-                appendStringInfoString(&buf, "NULL");
+                appendStringInfoString(&buf, "null");
                 continue;
             }
             if (arg_arrays_ndims[j] == 1)
             {
                 if (arg_arrays_nelems[j] <= i || (arg_arrays_nulls[j] != NULL && arg_arrays_nulls[j][i]))
                 {
-                    appendStringInfoString(&buf, "NULL");
+                    appendStringInfoString(&buf, "null");
                     continue;
                 }
                 else
                 {
                     char* str = pgau_datum_to_json_cstring(arg_arrays_elements[j][i], arg_arrays_eltps[j]);
+
                     appendStringInfoString(&buf, str);
                     pfree(str);
                     continue;
@@ -143,18 +154,19 @@ array_zip(PG_FUNCTION_ARGS)
             {
                 if (arg_arrays_dims[j][0] <= i)
                 {
-                    appendStringInfoString(&buf, "NULL");
+                    appendStringInfoString(&buf, "null");
                     continue;
                 }
                 else
                 {
                     StringInfoData element_json_str;
-                    initStringInfo(&element_json_str);
                     Datum* element_elems =  arg_arrays_elements[j] + arg_arrays_element_nelems[j] * i;
                     bool *element_nulls = (arg_arrays_nulls[j]) ? arg_arrays_nulls[j] + arg_arrays_element_nelems[j] * i : NULL;
                     Oid element_eltp =  arg_arrays_eltps[j];
                     int element_ndim = arg_arrays_ndims[j] - 1;
                     int* element_dims = arg_arrays_dims[j] + 1;
+
+                    initStringInfo(&element_json_str);
                     pgau_array_to_StringInfo(
                         &element_json_str, 
                         element_elems, 
@@ -173,13 +185,10 @@ array_zip(PG_FUNCTION_ARGS)
         jsonb_datums[i] = DirectFunctionCall1(jsonb_in, CStringGetDatum(buf.data));
         pfree(buf.data);
     }
-    int16 res_typlen;
-    bool  res_typbyval;
-    char  res_typalign;
     get_typlenbyvalalign(JSONBOID, &res_typlen, &res_typbyval, &res_typalign);
 
-    int res_dims[1] = {max_array_len};
-    int res_lbs[1] = {1};
+    res_dims[0] = max_array_len;
+    res_lbs[0] = 1;
     res_array = construct_md_array(jsonb_datums, NULL, 1, res_dims, res_lbs, JSONBOID, res_typlen, res_typbyval, res_typalign);
 
     pfree(arg_arrays);
