@@ -96,19 +96,19 @@ SELECT array_pad(ARRAY[1,2], 4, ARRAY[]::int[]);
 
 -- 5.2: несогласованная размерность
 SELECT array_pad(ARRAY[[1,2],[3,4]], 3, ARRAY[[0,0],[0,0]]);
--- Ошибка: The array being added to the original array should have one dimension fewer than the original
+-- Ошибка: ---//--- should have one dimension fewer than the original
 
 -- 5.2: несогласованные размеры по оставшимся измерениям
 SELECT array_pad(ARRAY[[1,2],[3,4]], 3, ARRAY[0,0,0]);
--- Ошибка: ...should have a numbers of elements equal to the numbers of elements in the original array in all dimensions except the first
+-- Ошибка: ---//--- should have a numbers of elements equal to the numbers of elements in the original array in all dimensions except the first
 
 -- 5.2: несогласованные lower bounds
 SELECT array_pad('[0:1][1:2]={{1,2},{3,4}}'::int[], 3, '[2:3]={0,0}'::int[]);
--- Ошибка: ...should have a lower bounds equal to the lower bounds in the original array in all dimensions except the first
+-- Ошибка: ---//--- should have a lower bounds equal to the lower bounds in the original array in all dimensions except the first
 
 -- 5.2: тип элементов добавляемого не совпадает
-SELECT array_pad(ARRAY[1,2], 4, ARRAY['a']);
--- Ошибка: The array being added to the original array should have the same type as the original
+SELECT array_pad(ARRAY[[1,2],[3,4]], 4, ARRAY['a']);
+-- Ошибка: ---//--- should have the same type as the original
 
 -- 1-й аргумент — не массив
 SELECT array_pad(5431, 4, 0);
