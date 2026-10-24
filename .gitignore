@@ -1,2 +1,6 @@
 *.o
 *.so
+
+task6/pg_array_utils/regression.diffs
+task6/pg_array_utils/regression.out
+task6/pg_array_utils/results/

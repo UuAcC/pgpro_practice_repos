@@ -35,7 +35,7 @@ SELECT array_chunk(ARRAY[1,2,3], 0);
 
 -- 1-й аргумент - не массив
 SELECT array_chunk(5431, 2);
--- Ошибка: function array_chunk(integer) does not exist
+-- Ошибка: function array_chunk(integer, integer) does not exist
 
 -- size - не integer
 SELECT array_chunk(ARRAY[5,4,3,1], 'broken');

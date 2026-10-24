@@ -70,9 +70,13 @@ pgau_datum_to_json_cstring(Datum value, Oid type)
 
     getTypeOutputInfo(type, &outfunc, &typisvarlena);
 
-    if (type == INT2OID || type == INT4OID || type == INT8OID ||
+    if (type == BOOLOID)
+    {
+        result = pstrdup(DatumGetBool(value) ? "true" : "false");
+    }
+    else if (type == INT2OID || type == INT4OID || type == INT8OID ||
         type == FLOAT4OID || type == FLOAT8OID ||
-        type == NUMERICOID || type == BOOLOID)
+        type == NUMERICOID)
     {
         result = OidOutputFunctionCall(outfunc, value);
     }
@@ -101,10 +105,10 @@ pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, i
     
     if (nelems <= 0)
     {
-        appendStringInfoString(dest, "{}");
+        appendStringInfoString(dest, "[]");
         return;
     }
-    appendStringInfoNChars(dest, '{', ndim);
+    appendStringInfoNChars(dest, '[', ndim);
     cnts = palloc0(sizeof(int) * ndim);
     for (int i = 0; i < nelems - 1; ++i) 
     {
@@ -128,9 +132,9 @@ pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, i
             }
             else break;
         }
-        appendStringInfoNChars(dest, '}', cnt_fbr);
+        appendStringInfoNChars(dest, ']', cnt_fbr);
         appendStringInfoChar(dest, ',');
-        appendStringInfoNChars(dest, '{', cnt_fbr);
+        appendStringInfoNChars(dest, '[', cnt_fbr);
     }
     if (nulls != NULL && nulls[nelems - 1]) appendStringInfoString(dest, "null");
     else 
@@ -140,7 +144,7 @@ pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, i
         appendStringInfoString(dest, last);
         pfree(last);
     }
-    appendStringInfoNChars(dest, '}', ndim);
+    appendStringInfoNChars(dest, ']', ndim);
     pfree(cnts);
 }
 

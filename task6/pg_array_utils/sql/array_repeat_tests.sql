@@ -7,8 +7,8 @@ SELECT array_repeat(5, 3);
 -- Ожидается: {5,5,5}
 
 -- 7.1: Повторение text-значения
-SELECT array_repeat('Around the world', 2);
--- Ожидается: {'Around the world','Around the world'}
+SELECT array_repeat('Around the world'::text, 2);
+-- Ожидается: {"Around the world","Around the world"}
 
 -- 7.1: Повторение boolean-значения
 SELECT array_repeat(true, 3);
@@ -23,7 +23,7 @@ SELECT array_repeat(5, 0);
 -- Ожидается: {}
 
 -- 7.1: Большое значение count (производительность)
-SELECT array_repeat('Around the world', 10000);
+SELECT array_repeat('Around the world'::text, 10000);
 
 -- 7.2: 1D массив
 SELECT array_repeat(ARRAY[1,2], 3);
@@ -31,7 +31,7 @@ SELECT array_repeat(ARRAY[1,2], 3);
 
 -- 7.2: 1D массив text
 SELECT array_repeat(ARRAY['Around','the world'], 2);
--- Ожидается: {{a,b},{a,b}}
+-- Ожидается: {{Around,"the world"},{Around,"the world"}}
 
 -- 7.2: N-мерный массив -> (N+1)-мерный
 SELECT array_repeat(ARRAY[[1,2],[3,4]], 2);

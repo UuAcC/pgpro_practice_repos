@@ -52,8 +52,11 @@ SELECT array_compact(ARRAY['a','',NULL,'b'], 'falsy');
 
 -- Режим 'falsy' для типа, не являющегося bool/numeric/text
 -- (фильтрует только NULL, аналогично 'null')
-SELECT array_compact(ARRAY[1,2,NULL]::uuid[], 'falsy');
--- Ожидается: фильтрация только NULL (поведение как у 'null')
+SELECT array_compact(
+    ARRAY['2024-01-01'::date, '2024-01-02'::date, NULL],
+    'falsy'
+);
+-- Ожидается: {01-01-2024,01-02-2024}
 
 -- Все элементы отфильтрованы — пустой массив
 SELECT array_compact(ARRAY[0,0,0], 'zero');
@@ -85,11 +88,11 @@ SELECT array_compact(ARRAY[[1,2],[3,4]], 'null');
 
 -- Несоответствие режима типу: 'zero' для text
 SELECT array_compact(ARRAY['a','b'], 'zero');
--- Ошибка: Impossible to use zero mode with text[] array
+-- Ошибка: Impossible to use zero mode with text array
 
 -- Несоответствие режима типу: 'empty' для integer
 SELECT array_compact(ARRAY[1,2], 'empty');
--- Ошибка: Impossible to use empty mode with integer[] array
+-- Ошибка: Impossible to use empty mode with integer array
 
 -- Несуществующий режим
 SELECT array_compact(ARRAY[1,2], 'invalid');

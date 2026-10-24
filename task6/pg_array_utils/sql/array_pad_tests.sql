@@ -2,41 +2,39 @@
 --                     Обычные случаи:
 -- -----------------------------------------------------------
 
--- 5.1 array_pad(anyarray, integer, anynonarray)
-
--- Дополнение в конец
+-- 5.1: Дополнение в конец
 SELECT array_pad(ARRAY[1,2], 4, 0);
 -- Ожидается: {1,2,0,0}
 
--- Дополнение в начало (отрицательный size)
+-- 5.1: Дополнение в начало (отрицательный size)
 SELECT array_pad(ARRAY[1,2], -4, 0);
 -- Ожидается: {0,0,1,2}
 
--- size == длине массива (ничего не меняется)
+-- 5.1: size == длине массива (ничего не меняется)
 SELECT array_pad(ARRAY[1,2], 2, 0);
 -- Ожидается: {1,2}
 
--- Пустой оригинальный массив
+-- 5.1: Пустой оригинальный массив
 SELECT array_pad(ARRAY[]::int[], 3, 7);
 -- Ожидается: {7,7,7}
 
--- Пустой оригинальный массив, отрицательный size
+-- 5.1: Пустой оригинальный массив, отрицательный size
 SELECT array_pad(ARRAY[]::int[], -3, 7);
 -- Ожидается: {7,7,7}
 
--- size = 0 с пустым массивом
+-- 5.1: size = 0 с пустым массивом
 SELECT array_pad(ARRAY[]::int[], 0, 7);
 -- Ожидается: {}
 
--- Текстовый массив
-SELECT array_pad(ARRAY['a','b'], 4, 'x');
+-- 5.1: Текстовый массив
+SELECT array_pad(ARRAY['a','b'], 4, 'x'::text);
 -- Ожидается: {a,b,x,x}
 
--- Исходный массив с NULL-элементами (NULL сохраняются)
+-- 5.1: Исходный массив с NULL-элементами (NULL сохраняются)
 SELECT array_pad(ARRAY[1,NULL,3], 5, 0);
 -- Ожидается: {1,NULL,3,0,0}
 
--- Большой массив (производительность)
+-- 5.1: Большой массив (производительность)
 SELECT array_pad(ARRAY[1,2,3], 10000, 0);
 
 -- 5.2: N-мерный исходный массив с согласованной формой
@@ -75,8 +73,8 @@ SELECT array_pad(ARRAY[1,2,3], 2, 0);
 -- Ошибка: The new lenght of the array can't be less than current
 
 -- 5.1: тип value не соответствует типу массива
-SELECT array_pad(ARRAY[1,2], 4, 'a');
--- Ошибка: The element to add should have the same type as array elements
+SELECT array_pad(ARRAY[1,2], 4, 'a'::text);
+-- Ошибка: function array_pad(integer[], integer, text) does not exist
 
 -- 5.1: N-мерный массив — ошибка
 SELECT array_pad(ARRAY[[1,2],[3,4]], 3, 0);
@@ -108,7 +106,7 @@ SELECT array_pad('[0:1][1:2]={{1,2},{3,4}}'::int[], 3, '[2:3]={0,0}'::int[]);
 
 -- 5.2: тип элементов добавляемого не совпадает
 SELECT array_pad(ARRAY[[1,2],[3,4]], 4, ARRAY['a']);
--- Ошибка: ---//--- should have the same type as the original
+-- Ошибка: function array_pad(integer[], integer, text[]) does not exist
 
 -- 1-й аргумент — не массив
 SELECT array_pad(5431, 4, 0);

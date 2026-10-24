@@ -32,10 +32,6 @@ array_compact(PG_FUNCTION_ARGS)
         {
             wrong_mode = !pgau_is_text_type(element_type);
         }
-        else if (strcmp(working_mode, "falsy") == 0)
-        {
-            wrong_mode = !(element_type == BOOLOID || pgau_is_numeric_type(element_type) || pgau_is_text_type(element_type));
-        }
         if (wrong_mode) 
         {
             ereport(ERROR,

@@ -40,7 +40,7 @@ SELECT array_slice(ARRAY[1,NULL,3,4], 2, 4);
 
 -- Текстовый массив
 SELECT array_slice(ARRAY['а','б','в','где','ёж'], 4, 5);
--- Ожидается: {'где','ёж'}
+-- Ожидается: {где,ёж}
 
 -- Большой массив (производительность)
 SELECT array_slice(ARRAY(SELECT generate_series(1,10000)), 100, 9000, 10);
