@@ -4,3 +4,4 @@
 pg_array_utils/regression.diffs
 pg_array_utils/regression.out
 pg_array_utils/results/
+pg_array_utils/.vscode/
