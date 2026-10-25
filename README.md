@@ -9,7 +9,7 @@ Current repository contents:
     - [pg_array_utils--1.0.sql](pg_array_utils/pg_array_utils--1.0.sql)
     - [pg_array_utils.control](pg_array_utils/pg_array_utils.control)
     - [Makefile](pg_array_utils/Makefile)
-    Folder also contains [design_doc.md](pg_array_utils/design_doc.md) - design document which describes extension functions;
+    - Folder also contains [design_doc.md](pg_array_utils/design_doc.md) - design document which describes extension functions;
 - [introduce_tasks/](introduce_tasks/) - folder with files, needed for tasks, completed before the development of the extension:
     - [task1/](introduce_tasks/task1/), [task2/](introduce_tasks/task2/), [task3/](introduce_tasks/task3/), [task4/](introduce_tasks/task4/), [task5/](introduce_tasks/task5/);
     - [python_benchmark_scripts/](introduce_tasks/python_benchmark_scripts/) - folder with python scripts for task5.

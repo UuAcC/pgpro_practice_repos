@@ -14,6 +14,8 @@ REGRESS = \
 	array_repeat_tests \
 	destruct__
 
+TAP_TESTS = t/001_parallel.pl t/002_big_data.pl
+
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
