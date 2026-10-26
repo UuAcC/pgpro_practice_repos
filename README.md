@@ -5,6 +5,7 @@ Current repository contents:
 - [pg_array_utils](pg_array_utils/) - the extension folder:
     - [sql/](pg_array_utils/sql/)      - regression tests;
     - [expected/](pg_array_utils/expected/) - expected results for regression tests;
+    - [t/](pg_array_utils/t/) - TAP-tests;
     - [src/](pg_array_utils/src/)      - source C code;
     - [pg_array_utils--1.0.sql](pg_array_utils/pg_array_utils--1.0.sql)
     - [pg_array_utils.control](pg_array_utils/pg_array_utils.control)
