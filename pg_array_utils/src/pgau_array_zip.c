@@ -219,5 +219,3 @@ array_zip(PG_FUNCTION_ARGS)
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
 
-// TODO: изучить итераторы и переписать функцию с их использованием (возможна большая экономия памяти)
-

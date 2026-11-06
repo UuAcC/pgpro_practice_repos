@@ -7,3 +7,4 @@ pg_array_utils/regression.out
 pg_array_utils/results/
 pg_array_utils/.vscode/
 pg_array_utils/tmp_check/
+pg_array_utils/TODO.txt

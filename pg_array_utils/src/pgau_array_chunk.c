@@ -14,7 +14,9 @@ array_chunk(PG_FUNCTION_ARGS)
 
     Datum *elements;
     bool *nulls;
-    int arg_nelems, chunk_size, chunks_cnt, new_size, dims[2], lbs[2];
+    int arg_nelems, dims[2], lbs[2];
+    int64 chunk_size, chunks_cnt;
+    Size new_size;
 
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
     if (ARR_NDIM(arg_array) > 1)
@@ -33,15 +35,21 @@ array_chunk(PG_FUNCTION_ARGS)
     get_typlenbyvalalign(element_type, &typlen, &typbyval, &typalign);
     deconstruct_array(arg_array, element_type, typlen, typbyval, typalign, &elements, &nulls, &arg_nelems);
 
-    chunk_size = PG_GETARG_INT32(1);
+    chunk_size = (int64)PG_GETARG_INT32(1);
     if (chunk_size <= 0)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("The chunk size should be greater than zero")));
     }
-    chunks_cnt = (arg_nelems + chunk_size - 1) / chunk_size;
-    new_size = chunk_size * chunks_cnt;
+    chunks_cnt = ((int64)arg_nelems + chunk_size - 1) / chunk_size;
+    if (chunks_cnt > MaxAllocSize / sizeof(Datum) / (Size)chunk_size)
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                 errmsg("The resulting array is too large")));
+    }
+    new_size = (Size)(chunk_size * chunks_cnt);
 
     dims[0] = chunks_cnt; dims[1] = chunk_size;
     lbs[0] = 1; lbs[1] = 1;
