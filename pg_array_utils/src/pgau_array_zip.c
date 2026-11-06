@@ -197,6 +197,9 @@ array_zip(PG_FUNCTION_ARGS)
         if (arg_arrays_elements[i]) pfree(arg_arrays_elements[i]);
         if (arg_arrays_nulls[i]) pfree(arg_arrays_nulls[i]);
     }
+    pfree(arg_arrays_elements);
+    pfree(arg_arrays_nulls);
+
     pfree(arg_arrays_nelems);
     pfree(arg_arrays_empty);
 
@@ -215,4 +218,6 @@ array_zip(PG_FUNCTION_ARGS)
 
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
+
+// TODO: изучить итераторы и переписать функцию с их использованием (возможна большая экономия памяти)
 
