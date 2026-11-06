@@ -17,7 +17,7 @@ array_flatten(PG_FUNCTION_ARGS)
     int arg_nelems, dims[1], lbs[1];
 
     arg_array = PG_GETARG_ARRAYTYPE_P(0);
-    if (PG_ARRAY_IS_EMPTY(arg_array))
+    if (ARR_NDIM(arg_array) <= 1 || ArrayGetNItems(ARR_NDIM(arg_array), ARR_DIMS(arg_array)) == 0)
     {
         PG_RETURN_ARRAYTYPE_P(arg_array);
     }
@@ -26,7 +26,7 @@ array_flatten(PG_FUNCTION_ARGS)
     deconstruct_array(arg_array, element_type, typlen, typbyval, typalign, &arg_elements, &arg_nulls, &arg_nelems);
 
     dims[0] = arg_nelems;
-    lbs[0]  = 1;
+    lbs[0]  = ARR_LBOUND(arg_array)[0];
 
     res_array = construct_md_array(arg_elements, arg_nulls,
                                 1, dims, lbs,
