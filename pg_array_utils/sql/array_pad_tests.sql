@@ -72,6 +72,10 @@ SELECT array_pad(ARRAY[1,2], 0, 7);
 SELECT array_pad(ARRAY[1,2,3], 2, 0);
 -- Ошибка: The new lenght of the array can't be less than current
 
+-- 5.1: Новый размер превышает максимально допустимый (см. дизайн-документ)
+SELECT array_pad(ARRAY[1,2], 2147483647, 0);
+-- Ошибка: The resulting array is too large
+
 -- 5.1: тип value не соответствует типу массива
 SELECT array_pad(ARRAY[1,2], 4, 'a'::text);
 -- Ошибка: function array_pad(integer[], integer, text) does not exist
@@ -87,6 +91,10 @@ SELECT array_pad(ARRAY[[1,2]], 0, ARRAY[0,0]);
 -- 5.2: |size| < длины по первому измерению
 SELECT array_pad(ARRAY[[1,2],[3,4]], 1, ARRAY[0,0]);
 -- Ошибка: The new lenght of the array can't be less than current
+
+-- 5.2: Новый размер превышает максимально допустимый (см. дизайн-документ)
+SELECT array_pad(ARRAY[[1,2],[3,4]], 2147483647, ARRAY[0,0]);
+-- Ошибка: The resulting array is too large
 
 -- 5.2: добавляемый массив пустой
 SELECT array_pad(ARRAY[1,2], 4, ARRAY[]::int[]);

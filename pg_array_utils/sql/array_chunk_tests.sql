@@ -33,6 +33,10 @@ SELECT array_chunk(ARRAY[]::int[], 2);
 SELECT array_chunk(ARRAY[1,2,3], 0);
 -- Ошибка: The chunk size should be greater than zero
 
+-- Новый размер превышает максимально допустимый (см. дизайн-документ)
+SELECT array_chunk(ARRAY[1,2], 2147483647);
+-- Ошибка: The resulting array is too large
+
 -- 1-й аргумент - не массив
 SELECT array_chunk(5431, 2);
 -- Ошибка: function array_chunk(integer, integer) does not exist

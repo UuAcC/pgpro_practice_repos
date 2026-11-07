@@ -64,9 +64,17 @@ SELECT array_repeat(ARRAY(SELECT generate_series(1,100)), 100);
 SELECT array_repeat(5, -1);
 -- Ошибка: Count can't be negative
 
+-- 7.1: Новый размер превышает максимально допустимый (см. дизайн-документ)
+SELECT array_repeat(67, 2147483647);
+-- Ошибка: The resulting array is too large
+
 -- 7.2: count < 0
 SELECT array_repeat(ARRAY[1,2], -1);
 -- Ошибка: Count can't be negative
+
+-- 7.2: Новый размер превышает максимально допустимый (см. дизайн-документ)
+SELECT array_repeat(ARRAY[6,7], 2147483647);
+-- Ошибка: The resulting array is too large
 
 -- count — не integer
 SELECT array_repeat(5, 'broken');
