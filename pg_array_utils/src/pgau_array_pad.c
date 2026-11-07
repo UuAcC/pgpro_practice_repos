@@ -196,7 +196,7 @@ array_pad_arr(PG_FUNCTION_ARGS)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-                 errmsg("Resulting array is too large"))); 
+                 errmsg("The resulting array is too large"))); 
     }
     if (size == 0) 
     {

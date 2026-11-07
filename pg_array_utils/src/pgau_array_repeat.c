@@ -28,7 +28,7 @@ array_repeat(PG_FUNCTION_ARGS)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-                 errmsg("Resulting array is too large")));
+                 errmsg("The resulting array is too large")));
     }
     res_elems = palloc(sizeof(Datum) * count);
     for (int i = 0; i < count; ++i)
@@ -74,7 +74,7 @@ array_repeat_arr(PG_FUNCTION_ARGS)
     {
         ereport(ERROR,
                 (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-                 errmsg("Resulting array is too large")));
+                 errmsg("The resulting array is too large")));
     }
     
     res_nelems = (Size)arg_nelems * (Size)count;
