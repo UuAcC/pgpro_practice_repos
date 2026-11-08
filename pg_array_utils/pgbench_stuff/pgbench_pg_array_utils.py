@@ -11,9 +11,9 @@ import sys
 DB             = "pgbench_test"
 EXTENSION_NAME = "pg_array_utils"
 USED_VERSION   = sys.argv[1]
-TIME           = 120
+TIME           = 60
 THREADS        = 2
-CLIENTS        = [1, 2, 4, 8, 16, 32, 64]
+CLIENTS        = [1, 2, 4, 8, 16, 32, 64, 128]
 REPEATS        = 3
 
 HOME        = Path.home()
@@ -124,6 +124,10 @@ def run_pgbench(script_file, clients, run_num):
 # =============================================
 
 def main():
+    print("=" * 41)
+    print("Начало работы")
+    print("=" * 41)
+    print()
     TEMP_DIR.mkdir(exist_ok=True)
     for f in (SCRIPT_FILE, BASELINE_FILE):
         if not f.exists():
@@ -133,7 +137,9 @@ def main():
     try:
         create_database()
         create_extension()
-
+        print("=" * 41)
+        print("БД и расширение созданы")
+        print("=" * 41)
         with RESULT_FILE.open("w", newline="") as ft:
             wt = csv.writer(ft)
             wt.writerow(["clients", "run", "stmt_idx",
