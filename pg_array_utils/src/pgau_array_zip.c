@@ -6,26 +6,17 @@ Datum
 array_zip(PG_FUNCTION_ARGS)
 {
     ArrayType** arg_arrays, *res_array;
-    Datum** arg_arrays_elements, *jsonb_datums;
-    bool** arg_arrays_nulls;
-    int* arg_arrays_nelems;
-
-    int *arg_arrays_element_nelems;
-
+    ArrayIterator* array_iters;
+    Datum *jsonb_datums;
     Oid* arg_arrays_eltps;
-    int16* arg_arrays_typlens;
-    bool* arg_arrays_typbyvals, *arg_arrays_empty;
-    char* arg_arrays_typaligns;
-
     int* arg_arrays_ndims;
-    int** arg_arrays_dims;
-    int max_array_len;
-    int arg_arrays_count = PG_NARGS();
-
+    int max_array_len, arg_arrays_count;
     int16 res_typlen;
     bool  res_typbyval;
     char  res_typalign;
     int res_dims[1], res_lbs[1];
+
+    arg_arrays_count = PG_NARGS();
 
     if (arg_arrays_count == 0)
     {
@@ -33,84 +24,36 @@ array_zip(PG_FUNCTION_ARGS)
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                  errmsg("array_zip requires at least one array")));
     }
-
     arg_arrays = palloc(sizeof(ArrayType*) * arg_arrays_count);
-    arg_arrays_elements = palloc(sizeof(Datum*) * arg_arrays_count);
-    arg_arrays_nulls = palloc(sizeof(bool*) * arg_arrays_count);
-    arg_arrays_nelems = palloc(sizeof(int) * arg_arrays_count);
-    arg_arrays_empty = palloc(sizeof(bool) * arg_arrays_count);
-
-    arg_arrays_element_nelems = palloc0(sizeof(int) * arg_arrays_count);
-
     arg_arrays_eltps = palloc(sizeof(Oid) * arg_arrays_count);
-    arg_arrays_typlens = palloc(sizeof(int16) * arg_arrays_count);
-    arg_arrays_typbyvals = palloc(sizeof(bool) * arg_arrays_count);
-    arg_arrays_typaligns = palloc(sizeof(char) * arg_arrays_count);
-
     arg_arrays_ndims = palloc(sizeof(int) * arg_arrays_count);
-    arg_arrays_dims = palloc(sizeof(int*) * arg_arrays_count);
+    array_iters = palloc(sizeof(ArrayIterator) * arg_arrays_count);
 
     max_array_len = 0;
 
     for (int i = 0; i < arg_arrays_count; ++i)
     {
-        Oid argtype = PG_GETARG_TYPE(i);
-        bool oiv = OidIsValid(argtype);
-        
-        if (!oiv || !OidIsValid(get_base_element_type(argtype)))
-            ereport(ERROR,
-                    (errcode(ERRCODE_DATATYPE_MISMATCH),
-                    errmsg("array_zip argument %d must be an array, got %s",
-                            i + 1,
-                            (oiv) ? format_type_be(argtype) : "unknown")));
+        int* idims;
+        bool arr_is_emp;
 
         arg_arrays[i] = PG_GETARG_ARRAYTYPE_P(i);
-
         arg_arrays_eltps[i] = ARR_ELEMTYPE(arg_arrays[i]);
-        get_typlenbyvalalign(
-            arg_arrays_eltps[i], 
-            &arg_arrays_typlens[i], 
-            &arg_arrays_typbyvals[i], 
-            &arg_arrays_typaligns[i]
-        );
         arg_arrays_ndims[i] = ARR_NDIM(arg_arrays[i]);
-        arg_arrays_dims[i] = ARR_DIMS(arg_arrays[i]);
+        idims = ARR_DIMS(arg_arrays[i]);
         
-        arg_arrays_empty[i] = pgau_array_is_empty(arg_arrays_ndims[i], arg_arrays_dims[i]);
-        max_array_len = (!arg_arrays_empty[i] && (arg_arrays_dims[i][0] > max_array_len)) ? arg_arrays_dims[i][0] : max_array_len;
-
-        deconstruct_array(
-            arg_arrays[i], 
-            arg_arrays_eltps[i], 
-            arg_arrays_typlens[i], 
-            arg_arrays_typbyvals[i],
-            arg_arrays_typaligns[i],
-            &arg_arrays_elements[i],
-            &arg_arrays_nulls[i],
-            &arg_arrays_nelems[i]
-        );
-        arg_arrays_element_nelems[i] = (!arg_arrays_empty[i]) ? arg_arrays_nelems[i] / arg_arrays_dims[i][0] : 0;
+        arr_is_emp = pgau_array_is_empty(arg_arrays_ndims[i], idims);
+        array_iters[i] = array_create_iterator(arg_arrays[i], (arr_is_emp ? 0 : arg_arrays_ndims[i] - 1), NULL);
+        max_array_len = (!arr_is_emp && (idims[0] > max_array_len)) ? idims[0] : max_array_len;
     }
 
     if (max_array_len == 0)
     {
         pfree(arg_arrays);
-        for (int i = 0; i < arg_arrays_count; ++i)
-        {
-            if (arg_arrays_elements[i]) pfree(arg_arrays_elements[i]);
-            if (arg_arrays_nulls[i]) pfree(arg_arrays_nulls[i]);
-        }
-        pfree(arg_arrays_nelems);
-        pfree(arg_arrays_empty);
-
-        pfree(arg_arrays_element_nelems);
-
         pfree(arg_arrays_eltps);
-        pfree(arg_arrays_typlens);
-        pfree(arg_arrays_typbyvals);
-        pfree(arg_arrays_typaligns);
         pfree(arg_arrays_ndims);
-        pfree(arg_arrays_dims);
+        for (int i = 0; i < arg_arrays_count; ++i)
+            array_free_iterator(array_iters[i]);
+        pfree(array_iters);
 
         PG_RETURN_ARRAYTYPE_P(construct_empty_array(JSONBOID));
     }
@@ -122,28 +65,34 @@ array_zip(PG_FUNCTION_ARGS)
 
         initStringInfo(&buf);
         appendStringInfoChar(&buf, '{');
+
         for (int j = 0; j < arg_arrays_count; ++j)
         {
             char fstr[32];
+            Datum itel_datum;
+            bool itel_isnull, has_it;
 
             if (j > 0) appendStringInfoChar(&buf, ',');
             sprintf(fstr, "\"f%d\":", j + 1);
             appendStringInfoString(&buf, fstr);
-            if (arg_arrays_empty[j])
+
+            has_it = array_iterate(array_iters[j], &itel_datum, &itel_isnull);
+
+            if (!has_it)
             {
                 appendStringInfoString(&buf, "null");
                 continue;
             }
             if (arg_arrays_ndims[j] == 1)
             {
-                if (arg_arrays_nelems[j] <= i || (arg_arrays_nulls[j] != NULL && arg_arrays_nulls[j][i]))
+                if (itel_isnull)
                 {
                     appendStringInfoString(&buf, "null");
                     continue;
                 }
                 else
                 {
-                    char* str = pgau_datum_to_json_cstring(arg_arrays_elements[j][i], arg_arrays_eltps[j]);
+                    char* str = pgau_datum_to_json_cstring(itel_datum, arg_arrays_eltps[j]);
 
                     appendStringInfoString(&buf, str);
                     pfree(str);
@@ -152,33 +101,43 @@ array_zip(PG_FUNCTION_ARGS)
             }
             else 
             {
-                if (arg_arrays_dims[j][0] <= i)
-                {
-                    appendStringInfoString(&buf, "null");
-                    continue;
-                }
-                else
-                {
-                    StringInfoData element_json_str;
-                    Datum* element_elems =  arg_arrays_elements[j] + arg_arrays_element_nelems[j] * i;
-                    bool *element_nulls = (arg_arrays_nulls[j]) ? arg_arrays_nulls[j] + arg_arrays_element_nelems[j] * i : NULL;
-                    Oid element_eltp =  arg_arrays_eltps[j];
-                    int element_ndim = arg_arrays_ndims[j] - 1;
-                    int* element_dims = arg_arrays_dims[j] + 1;
+                StringInfoData element_json_str;
+                Datum* element_elems;
+                bool *element_nulls;
+                int element_ndim, element_nelems;
+                int* element_dims;
+                int16 el_typlen;
+                bool el_typbyval;
+                char el_typalign;
 
-                    initStringInfo(&element_json_str);
-                    pgau_array_to_StringInfo(
-                        &element_json_str, 
-                        element_elems, 
-                        element_nulls, 
-                        element_eltp, 
-                        arg_arrays_element_nelems[j],
-                        element_ndim, 
-                        element_dims
-                    );
-                    appendStringInfoString(&buf, element_json_str.data);
-                    pfree(element_json_str.data);
-                }
+                ArrayType* element_array = DatumGetArrayTypeP(itel_datum);
+
+                get_typlenbyvalalign(arg_arrays_eltps[j], &el_typlen, &el_typbyval, &el_typalign);
+                deconstruct_array(
+                    element_array, 
+                    arg_arrays_eltps[j], el_typlen, el_typbyval, el_typalign, 
+                    &element_elems, 
+                    &element_nulls, 
+                    &element_nelems
+                );
+                element_ndim = arg_arrays_ndims[j] - 1;
+                element_dims = ARR_DIMS(element_array);
+
+                initStringInfo(&element_json_str);
+                pgau_array_to_StringInfo(
+                    &element_json_str, 
+                    element_elems, 
+                    element_nulls, 
+                    arg_arrays_eltps[j], 
+                    element_nelems,
+                    element_ndim, 
+                    element_dims
+                );
+                appendStringInfoString(&buf, element_json_str.data);
+                pfree(element_json_str.data);
+                pfree(element_elems);
+                pfree(element_nulls);
+                pfree(element_array);
             }
         }
         appendStringInfoChar(&buf, '}');
@@ -192,29 +151,14 @@ array_zip(PG_FUNCTION_ARGS)
     res_array = construct_md_array(jsonb_datums, NULL, 1, res_dims, res_lbs, JSONBOID, res_typlen, res_typbyval, res_typalign);
 
     pfree(arg_arrays);
-    for (int i = 0; i < arg_arrays_count; ++i)
-    {
-        if (arg_arrays_elements[i]) pfree(arg_arrays_elements[i]);
-        if (arg_arrays_nulls[i]) pfree(arg_arrays_nulls[i]);
-    }
-    pfree(arg_arrays_elements);
-    pfree(arg_arrays_nulls);
-
-    pfree(arg_arrays_nelems);
-    pfree(arg_arrays_empty);
-
-    pfree(arg_arrays_element_nelems);
-
     pfree(arg_arrays_eltps);
-    pfree(arg_arrays_typlens);
-    pfree(arg_arrays_typbyvals);
-    pfree(arg_arrays_typaligns);
     pfree(arg_arrays_ndims);
-    pfree(arg_arrays_dims);
-
     for (int i = 0; i < max_array_len; ++i)
         pfree(DatumGetPointer(jsonb_datums[i]));
     pfree(jsonb_datums);
+    for (int i = 0; i < arg_arrays_count; ++i)
+        array_free_iterator(array_iters[i]);
+    pfree(array_iters);
 
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
