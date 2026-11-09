@@ -124,7 +124,7 @@ array_zip(PG_FUNCTION_ARGS)
                 element_dims = ARR_DIMS(element_array);
 
                 initStringInfo(&element_json_str);
-                pgau_array_to_StringInfo(
+                pgau_deconstructed_ArrayType_to_StringInfo(
                     &element_json_str, 
                     element_elems, 
                     element_nulls, 

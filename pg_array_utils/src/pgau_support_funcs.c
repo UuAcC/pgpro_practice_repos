@@ -99,7 +99,7 @@ Requires arrays of elements (ELEMS) and nulls (NULLS), the type (ELTP) of the an
 (NELEMS) and dimensions (NDIM) and the pointer to the array of dimensions sizes (DIMS).
 */
 void
-pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims)
+pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims)
 {
     int* cnts;
     
@@ -148,28 +148,71 @@ pgau_array_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, i
     pfree(cnts);
 }
 
-/* 
-
-{{{1,2,3},{4,5,6}},{{7,8,9},{10,11,12}}}
-   0 1 2   3 4 5     6 7 8   9  10 11
-
-stroka += '{' * ndim;
-int* cnts = palloc0(sizeof(int) * ndim);
-for (int i = 0; i < nelems - 1; ++i) {
-    stroka += inner_array[i];
-    cnt_fbr = 0;
-    for (int j = 0; j < ndim; ++j) {
-        cnts[j]++;
-        if (cnts[j] == dims[ndim-1 - j]) {
-            cnts[j] = 0;
-            cnt_fbr++;
-        }
-        else break;
-    }
-    stroka += '}' * cnt_fbr + ',' + '{' * cnt_fbr;
-}
-stroka += inner_array[nelems - 1];
-stroka += '}' * ndim;
-
+/*
+Converts anyarray to StringInfo. 
+Requires only the ArrayType*.
 */
+void
+pgau_ArrayType_to_StringInfo(StringInfo dest, ArrayType* array)
+{
+    int* cnts, ndim, *dims, nelems;
+    Oid eltp;
+    Datum itel_datum;
+    bool itel_isnull;
+    ArrayIterator iter;
+
+    ndim = ARR_NDIM(array);
+    dims = ARR_DIMS(array);
+    nelems = ArrayGetNItems(ndim, dims);
+    eltp = ARR_ELEMTYPE(array);
+
+    if (nelems <= 0)
+    {
+        appendStringInfoString(dest, "[]");
+        return;
+    }
+    appendStringInfoNChars(dest, '[', ndim);
+    cnts = palloc0(sizeof(int) * ndim);
+    iter = array_create_iterator(array, 0, NULL);
+    for (int i = 0; i < nelems - 1; ++i) 
+    {
+        int cnt_fbr;
+
+        cnt_fbr = 0;
+        array_iterate(iter, &itel_datum, &itel_isnull);
+        if (itel_isnull) appendStringInfoString(dest, "null");
+        else 
+        {
+            char* str = pgau_datum_to_json_cstring(itel_datum, eltp);
+
+            appendStringInfoString(dest, str);
+            pfree(str);
+        }
+        for (int j = 0; j < ndim; ++j) 
+        {
+            cnts[j]++;
+            if (cnts[j] == dims[ndim-1 - j]) 
+            {
+                cnts[j] = 0;
+                cnt_fbr++;
+            }
+            else break;
+        }
+        appendStringInfoNChars(dest, ']', cnt_fbr);
+        appendStringInfoChar(dest, ',');
+        appendStringInfoNChars(dest, '[', cnt_fbr);
+    }
+    array_iterate(iter, &itel_datum, &itel_isnull);
+    if (itel_isnull) appendStringInfoString(dest, "null");
+    else 
+    {
+        char* last = pgau_datum_to_json_cstring(itel_datum, eltp);
+
+        appendStringInfoString(dest, last);
+        pfree(last);
+    }
+    appendStringInfoNChars(dest, ']', ndim);
+    array_free_iterator(iter);
+    pfree(cnts);
+}
 
