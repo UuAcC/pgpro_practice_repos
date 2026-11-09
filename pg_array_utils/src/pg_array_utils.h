@@ -81,7 +81,7 @@ bool
 pgau_text_is_empty(Oid eltp, Datum a);
 
 char*
-pgau_datum_to_json_cstring(Datum value, Oid type);
+pgau_datum_to_json_cstring(Datum value, Oid type, Oid outfunc);
 void
 pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims);
 void

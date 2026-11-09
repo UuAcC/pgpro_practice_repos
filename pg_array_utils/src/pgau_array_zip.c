@@ -71,6 +71,9 @@ array_zip(PG_FUNCTION_ARGS)
             char fstr[32];
             Datum itel_datum;
             bool itel_isnull, has_it;
+            Oid outfunc;
+            bool typisvarlena;
+            getTypeOutputInfo(arg_arrays_eltps[j], &outfunc, &typisvarlena);
 
             if (j > 0) appendStringInfoChar(&buf, ',');
             sprintf(fstr, "\"f%d\":", j + 1);
@@ -92,7 +95,7 @@ array_zip(PG_FUNCTION_ARGS)
                 }
                 else
                 {
-                    char* str = pgau_datum_to_json_cstring(itel_datum, arg_arrays_eltps[j]);
+                    char* str = pgau_datum_to_json_cstring(itel_datum, arg_arrays_eltps[j], outfunc);
 
                     appendStringInfoString(&buf, str);
                     pfree(str);
@@ -102,41 +105,14 @@ array_zip(PG_FUNCTION_ARGS)
             else 
             {
                 StringInfoData element_json_str;
-                Datum* element_elems;
-                bool *element_nulls;
-                int element_ndim, element_nelems;
-                int* element_dims;
-                int16 el_typlen;
-                bool el_typbyval;
-                char el_typalign;
+                ArrayType* element_array;
 
-                ArrayType* element_array = DatumGetArrayTypeP(itel_datum);
-
-                get_typlenbyvalalign(arg_arrays_eltps[j], &el_typlen, &el_typbyval, &el_typalign);
-                deconstruct_array(
-                    element_array, 
-                    arg_arrays_eltps[j], el_typlen, el_typbyval, el_typalign, 
-                    &element_elems, 
-                    &element_nulls, 
-                    &element_nelems
-                );
-                element_ndim = arg_arrays_ndims[j] - 1;
-                element_dims = ARR_DIMS(element_array);
+                element_array = DatumGetArrayTypeP(itel_datum);
 
                 initStringInfo(&element_json_str);
-                pgau_deconstructed_ArrayType_to_StringInfo(
-                    &element_json_str, 
-                    element_elems, 
-                    element_nulls, 
-                    arg_arrays_eltps[j], 
-                    element_nelems,
-                    element_ndim, 
-                    element_dims
-                );
+                pgau_ArrayType_to_StringInfo(&element_json_str, element_array);
                 appendStringInfoString(&buf, element_json_str.data);
                 pfree(element_json_str.data);
-                pfree(element_elems);
-                pfree(element_nulls);
                 pfree(element_array);
             }
         }
