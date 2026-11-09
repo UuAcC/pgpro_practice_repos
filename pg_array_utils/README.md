@@ -51,9 +51,9 @@
 |array_chunk(anyarray, integer)|anyarray|anyarray, size integer|Преобразование одномерного массива в многомерный (массив чанков размера `size`)|
 |array_zip(VARIADIC "any")|Один или несколько anyarray различных типов|jsonb[]|Слияние нескольких массивов в jsonb[], каждый элемент результирующего массива - JSON-объект с полями `"f1" , "f2" , …`, где i-е поле содержит элемент / подмассив i-го входного массива|
 |array_compact(anyarray, text)|anyarray, mode text|anyarray|Удаление «пустых» элементов одномерного массива. `mode` определяет режим работы: `'null'` — удалить NULL, `'zero'` — числовые нули (0), `'empty'` — пустые строки/bytea и т.п. (""), `'falsy'` — удалить NULL, false, 0, ""|
-|array_pad(anyarray, integer, anynonarray)<br>array_pad(anyarray, integer, anynarray)|anyarray, size integer, value anynonarray<br>anyarray, size integer, value anynarray|anyarray|Дополнение массива до длины `size` значением `value`. Положительный `size` — дополнение в конец, отрицательный — в начало|
+|array_pad(anyarray, integer, anynonarray)<br><br>array_pad(anyarray, integer, anynarray)|anyarray, size integer, value anynonarray<br><br>anyarray, size integer, value anynarray|anyarray|Дополнение массива до длины `size` значением `value`. Положительный `size` — дополнение в конец, отрицательный — в начало|
 |array_slice(anyarray, integer, integer, integer DEFAULT 1)|anyarray, start integer, end integer, step integer|anyarray|Нахождение среза массива по первому измерению с шагом `step`. Индекс каждого элемента среза принадлежит отрезку `[start; end]`|
-|array_repeat(anynonarray, integer)<br>array_repeat(anyarray, integer)|anynoarray, count integer<br>anyarray, count integer|anyarray|Создание одномерного массива из заданного элемента / массива, повторённого `count` раз|
+|array_repeat(anynonarray, integer)<br><br>array_repeat(anyarray, integer)|anynoarray, count integer<br><br>anyarray, count integer|anyarray|Создание одномерного массива из заданного элемента / массива, повторённого `count` раз|
 
 
 ## Примеры использования
@@ -161,15 +161,16 @@ SELECT array_repeat(ARRAY[[1,2],[3,4]], 2);
 При тестирования расширения использовались регрессионные и TAP-тесты. Результаты:
 |Тест|Вид|Результат|
 |----|---|---------|
-|array_flatten_tests|Regression|PASS|
-|array_chunk_tests|Regression|PASS|
-|array_zip_tests|Regression|PASS|
-|array_compact_tests|Regression|PASS|
-|array_pad_tests|Regression|PASS|
-|array_slice_tests|Regression|PASS|
-|array_repeat_tests|Regression|PASS|
-|parallel|TAP|PASS|
-|big_data|TAP|PASS|
+|array_flatten_tests|Regression|✅PASS|
+|array_chunk_tests|Regression|✅PASS|
+|array_zip_tests|Regression|✅PASS|
+|array_compact_tests|Regression|✅PASS|
+|array_pad_tests|Regression|✅PASS|
+|array_slice_tests|Regression|✅PASS|
+|array_repeat_tests|Regression|✅PASS|
+|parallel|TAP|✅PASS|
+|big_data|TAP|✅PASS|
+
 Вывод команды `make installcheck`:
 ```bash
 # +++ regress install-check in  +++
@@ -218,7 +219,7 @@ psql -d postgres -c "CREATE EXTENSION pg_array_utils;"
 --------
 ##### Примечания:
 
-[^1]: Более подробно дизайн расширения **pg_array_utils** описан в [дизайн-документе](design_doc.md).
+[^1]: Более подробно дизайн расширения **pg_array_utils** описан в [дизайн-документе](pg_array_utils/design_doc.md).
 [^2]: Исключения: array_chunk и array_compact, передача в них многомерного массива в качестве параметра приводит к ошибке.
 [^3]: В Postgres версии 18.4 значение `MaxAllocSize` равно `1073741823` (т.е. 1Гб - 1).
 [^4]: Реализованы две C-функции, регистрируемые под одним SQL-именем для перегрузки.
