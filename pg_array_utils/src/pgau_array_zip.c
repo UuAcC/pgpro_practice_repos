@@ -8,7 +8,7 @@ array_zip(PG_FUNCTION_ARGS)
     ArrayType** arg_arrays, *res_array;
     ArrayIterator* array_iters;
     Datum *jsonb_datums;
-    Oid* arg_arrays_eltps;
+    Oid* arg_arrays_eltps, *arg_arrays_outfuncs;
     int* arg_arrays_ndims;
     int max_array_len, arg_arrays_count;
     int16 res_typlen;
@@ -26,6 +26,7 @@ array_zip(PG_FUNCTION_ARGS)
     }
     arg_arrays = palloc(sizeof(ArrayType*) * arg_arrays_count);
     arg_arrays_eltps = palloc(sizeof(Oid) * arg_arrays_count);
+    arg_arrays_outfuncs = palloc(sizeof(Oid) * arg_arrays_count);
     arg_arrays_ndims = palloc(sizeof(int) * arg_arrays_count);
     array_iters = palloc(sizeof(ArrayIterator) * arg_arrays_count);
 
@@ -34,7 +35,7 @@ array_zip(PG_FUNCTION_ARGS)
     for (int i = 0; i < arg_arrays_count; ++i)
     {
         int* idims;
-        bool arr_is_emp;
+        bool arr_is_emp, typisvarlena;
 
         arg_arrays[i] = PG_GETARG_ARRAYTYPE_P(i);
         arg_arrays_eltps[i] = ARR_ELEMTYPE(arg_arrays[i]);
@@ -42,6 +43,7 @@ array_zip(PG_FUNCTION_ARGS)
         idims = ARR_DIMS(arg_arrays[i]);
         
         arr_is_emp = pgau_array_is_empty(arg_arrays_ndims[i], idims);
+        getTypeOutputInfo(arg_arrays_eltps[i], &arg_arrays_outfuncs[i], &typisvarlena);
         array_iters[i] = array_create_iterator(arg_arrays[i], (arr_is_emp ? 0 : arg_arrays_ndims[i] - 1), NULL);
         max_array_len = (!arr_is_emp && (idims[0] > max_array_len)) ? idims[0] : max_array_len;
     }
@@ -50,6 +52,7 @@ array_zip(PG_FUNCTION_ARGS)
     {
         pfree(arg_arrays);
         pfree(arg_arrays_eltps);
+        pfree(arg_arrays_outfuncs);
         pfree(arg_arrays_ndims);
         for (int i = 0; i < arg_arrays_count; ++i)
             array_free_iterator(array_iters[i]);
@@ -71,9 +74,6 @@ array_zip(PG_FUNCTION_ARGS)
             char fstr[32];
             Datum itel_datum;
             bool itel_isnull, has_it;
-            Oid outfunc;
-            bool typisvarlena;
-            getTypeOutputInfo(arg_arrays_eltps[j], &outfunc, &typisvarlena);
 
             if (j > 0) appendStringInfoChar(&buf, ',');
             sprintf(fstr, "\"f%d\":", j + 1);
@@ -95,7 +95,7 @@ array_zip(PG_FUNCTION_ARGS)
                 }
                 else
                 {
-                    char* str = pgau_datum_to_json_cstring(itel_datum, arg_arrays_eltps[j], outfunc);
+                    char* str = pgau_datum_to_json_cstring(itel_datum, arg_arrays_eltps[j], arg_arrays_outfuncs[j]);
 
                     appendStringInfoString(&buf, str);
                     pfree(str);
@@ -110,7 +110,7 @@ array_zip(PG_FUNCTION_ARGS)
                 element_array = DatumGetArrayTypeP(itel_datum);
 
                 initStringInfo(&element_json_str);
-                pgau_ArrayType_to_StringInfo(&element_json_str, element_array);
+                pgau_ArrayType_to_StringInfo(&element_json_str, element_array, arg_arrays_outfuncs[j]);
                 appendStringInfoString(&buf, element_json_str.data);
                 pfree(element_json_str.data);
                 pfree(element_array);
@@ -128,6 +128,7 @@ array_zip(PG_FUNCTION_ARGS)
 
     pfree(arg_arrays);
     pfree(arg_arrays_eltps);
+    pfree(arg_arrays_outfuncs);
     pfree(arg_arrays_ndims);
     for (int i = 0; i < max_array_len; ++i)
         pfree(DatumGetPointer(jsonb_datums[i]));

@@ -99,15 +99,15 @@ pgau_datum_to_json_cstring(Datum value, Oid type, Oid outfunc)
 }
 
 /*
-Converts anyarray to StringInfo. 
-Requires arrays of elements (ELEMS) and nulls (NULLS), the type (ELTP) of the anyarray element, number of elements 
-(NELEMS) and dimensions (NDIM) and the pointer to the array of dimensions sizes (DIMS).
+Converts anyarray to StringInfo.
+Requires arrays of elements (ELEMS) and nulls (NULLS), the type (ELTP) of the anyarray element, number of elements (NELEMS) and dimensions (NDIM) and the pointer to the array of dimensions sizes (DIMS). 
+You can specify the function used to convert elements of the array (OUTFUNC). Use InvalidOid value to auto-select.
 */
 void
-pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims)
+pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* nulls, Oid eltp, int nelems, int ndim, int* dims, Oid outfunc)
 {
     int* cnts;
-    Oid outfunc;
+    Oid otf;
     bool typisvarlena;
     
     if (nelems <= 0)
@@ -115,9 +115,13 @@ pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* 
         appendStringInfoString(dest, "[]");
         return;
     }
-    appendStringInfoNChars(dest, '[', ndim);
+
+    if (outfunc == InvalidOid) getTypeOutputInfo(eltp, &otf, &typisvarlena);
+    else otf = outfunc;
+    
     cnts = palloc0(sizeof(int) * ndim);
-    getTypeOutputInfo(eltp, &outfunc, &typisvarlena);
+
+    appendStringInfoNChars(dest, '[', ndim);
     for (int i = 0; i < nelems - 1; ++i) 
     {
         int cnt_fbr = 0;
@@ -125,7 +129,7 @@ pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* 
         if (nulls != NULL && nulls[i]) appendStringInfoString(dest, "null");
         else 
         {
-            char* str = pgau_datum_to_json_cstring(elems[i], eltp, outfunc);
+            char* str = pgau_datum_to_json_cstring(elems[i], eltp, otf);
 
             appendStringInfoString(dest, str);
             pfree(str);
@@ -147,7 +151,7 @@ pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* 
     if (nulls != NULL && nulls[nelems - 1]) appendStringInfoString(dest, "null");
     else 
     {
-        char* last = pgau_datum_to_json_cstring(elems[nelems - 1], eltp, outfunc);
+        char* last = pgau_datum_to_json_cstring(elems[nelems - 1], eltp, otf);
 
         appendStringInfoString(dest, last);
         pfree(last);
@@ -157,18 +161,19 @@ pgau_deconstructed_ArrayType_to_StringInfo(StringInfo dest, Datum* elems, bool* 
 }
 
 /*
-Converts anyarray to StringInfo. 
-Requires only the ArrayType*.
+Converts anyarray to StringInfo.
+Requires the ArrayType*. 
+You can specify the function used to convert elements of the array (OUTFUNC). Use InvalidOid value to auto-select.
 */
 void
-pgau_ArrayType_to_StringInfo(StringInfo dest, ArrayType* array)
+pgau_ArrayType_to_StringInfo(StringInfo dest, ArrayType* array, Oid outfunc)
 {
     int* cnts, ndim, *dims, nelems;
     Oid eltp;
     Datum itel_datum;
     bool itel_isnull;
     ArrayIterator iter;
-    Oid outfunc;
+    Oid otf;
     bool typisvarlena;
 
     ndim = ARR_NDIM(array);
@@ -181,10 +186,14 @@ pgau_ArrayType_to_StringInfo(StringInfo dest, ArrayType* array)
         appendStringInfoString(dest, "[]");
         return;
     }
-    appendStringInfoNChars(dest, '[', ndim);
+
+    if (outfunc == InvalidOid) getTypeOutputInfo(eltp, &otf, &typisvarlena);
+    else otf = outfunc;
+
     cnts = palloc0(sizeof(int) * ndim);
     iter = array_create_iterator(array, 0, NULL);
-    getTypeOutputInfo(eltp, &outfunc, &typisvarlena);
+
+    appendStringInfoNChars(dest, '[', ndim);
     for (int i = 0; i < nelems - 1; ++i) 
     {
         int cnt_fbr;
@@ -194,7 +203,7 @@ pgau_ArrayType_to_StringInfo(StringInfo dest, ArrayType* array)
         if (itel_isnull) appendStringInfoString(dest, "null");
         else 
         {
-            char* str = pgau_datum_to_json_cstring(itel_datum, eltp, outfunc);
+            char* str = pgau_datum_to_json_cstring(itel_datum, eltp, otf);
 
             appendStringInfoString(dest, str);
             pfree(str);
@@ -217,7 +226,7 @@ pgau_ArrayType_to_StringInfo(StringInfo dest, ArrayType* array)
     if (itel_isnull) appendStringInfoString(dest, "null");
     else 
     {
-        char* last = pgau_datum_to_json_cstring(itel_datum, eltp, outfunc);
+        char* last = pgau_datum_to_json_cstring(itel_datum, eltp, otf);
 
         appendStringInfoString(dest, last);
         pfree(last);
