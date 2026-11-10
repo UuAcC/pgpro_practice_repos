@@ -50,13 +50,13 @@ array_zip(PG_FUNCTION_ARGS)
 
     if (max_array_len == 0)
     {
-        pfree(arg_arrays);
         pfree(arg_arrays_eltps);
         pfree(arg_arrays_outfuncs);
         pfree(arg_arrays_ndims);
         for (int i = 0; i < arg_arrays_count; ++i)
             array_free_iterator(array_iters[i]);
         pfree(array_iters);
+        pfree(arg_arrays);
 
         PG_RETURN_ARRAYTYPE_P(construct_empty_array(JSONBOID));
     }
@@ -126,7 +126,7 @@ array_zip(PG_FUNCTION_ARGS)
     res_lbs[0] = 1;
     res_array = construct_md_array(jsonb_datums, NULL, 1, res_dims, res_lbs, JSONBOID, res_typlen, res_typbyval, res_typalign);
 
-    pfree(arg_arrays);
+    
     pfree(arg_arrays_eltps);
     pfree(arg_arrays_outfuncs);
     pfree(arg_arrays_ndims);
@@ -136,6 +136,7 @@ array_zip(PG_FUNCTION_ARGS)
     for (int i = 0; i < arg_arrays_count; ++i)
         array_free_iterator(array_iters[i]);
     pfree(array_iters);
+    pfree(arg_arrays);
 
     PG_RETURN_ARRAYTYPE_P(res_array);
 }
