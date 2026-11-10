@@ -7,6 +7,7 @@ Current repository contents:
     - [expected/](pg_array_utils/expected/) - expected results for regression tests;
     - [t/](pg_array_utils/t/) - TAP-tests;
     - [src/](pg_array_utils/src/)      - source C code;
+    - [pgbench_stuff/](pg_array_utils/pgbench_stuff/) - python & SQL scripts used to pgbench extension functions;
     - [pg_array_utils--1.0.sql](pg_array_utils/pg_array_utils--1.0.sql)
     - [pg_array_utils.control](pg_array_utils/pg_array_utils.control)
     - [Makefile](pg_array_utils/Makefile)
