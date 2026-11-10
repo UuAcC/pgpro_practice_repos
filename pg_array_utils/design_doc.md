@@ -81,7 +81,7 @@
     - Для N-мерного массива (`N > 1`) значение i-го поля — JSON-представление подмассива по оставшимся размерностям `dims[1..]` (i-й "строки" первого измерения), сериализуемое через `pgau_array_to_StringInfo` или `NULL`, если `i >= dims[0]`;
     - Если все входные массивы пустые — возвращается пустой `jsonb[]`.
 - **Используемый алгоритм/решение:**
-    Для каждого входного массива: `deconstruct_array`, определение `dims[0]`, числа элементов на одну "строку" первого измерения и признака пустоты. Затем для `i = 0 .. max_len - 1` строится JSON-строка через `StringInfo`, поля `"f<j>"`, и преобразуется в `jsonb` через `DirectFunctionCall1(jsonb_in, ...)`. Результат собирается `construct_md_array`.
+    Для каждого входного массива: однократное `getTypeOutputInfo`, создание `ArrayIterator` с глубиной среза `ndim - 1`, определение `dims[0]` и признака пустоты. Затем для `i = 0 .. max_len - 1` строится JSON-строка через `StringInfo`, поля `"f<j>"`: для 1D-массива элемент сериализуется через `pgau_datum_to_json_cstring` с заранее вычисленной out-функцией; для N-мерного массива итератор возвращает подмассив размерности `ndim - 1`, сериализуемый через `pgau_ArrayType_to_StringInfo`. Каждая строка преобразуется в `jsonb` через `DirectFunctionCall1(jsonb_in, ...)`; результат собирается `construct_md_array`.
 - **Ограничения:**
     - Нулевое число аргументов — ошибка;
     - Каждый аргумент - массив;
@@ -114,7 +114,7 @@
     - Выход для непустого входа — одномерный массив с `lbs = 1`; если после фильтрации элементов не осталось — пустой массив;
     - `'zero'` и `'empty'` сохраняют NULL-элементы; `'null'` и `'falsy'` удаляют NULL.
 - **Используемый алгоритм/решение:**
-    `deconstruct_array` => проход по `elements`/`nulls` => заполнение `res_elems` (и при необходимости `res_nulls`) => `construct_array` для режимов `'null'` и `'falsy'` или `construct_md_array` для `'zero'` и `'empty'`.
+    В функции используется обход массива с помощью итератора `ArrayIterator`. Проверки режима/типа элементов и пустоты выполняются до создания итератора; затем `array_create_iterator` => проход по элементам через `array_iterate` => заполнение `res_elems` (и при необходимости `res_nulls`) => `construct_array` для режимов `'null'` и `'falsy'` (NULL в результат не попадают) или `construct_md_array` для `'zero'` и `'empty'` (NULL сохраняются в NULL-карте).
     Для `'zero'` используется `pgau_numeric_is_zero`, для `'empty'` — `pgau_text_is_empty`, для `'falsy'` — фильтрация NULL, проверка истинности элемента или соответствующая функция сравнения, в зависимости от типа элементов массива.
 - **Ограничения:**
     - Режим чувствителен к регистру и должен быть одним из перечня: `'null'`, `'falsy'`, `'zero'`, `'empty'`;
@@ -305,8 +305,9 @@
 - `appendStringInfoNChars(str, c, n)` — добавляет `n` символов `c` в `StringInfo`.
 - `pgau_numeric_is_zero(eltp, a)` — сравнение числового Datum с нулём; для неподдерживаемого типа — ошибка.
 - `pgau_text_is_empty(eltp, a)` — проверка текстового/бинарного Datum на пустоту; для неподдерживаемого типа — ошибка.
-- `pgau_datum_to_json_cstring(value, type)` — преобразует Datum в C-строку JSON: числовые/boolean — без изменений, остальные — с `escape_json`.
-- `pgau_array_to_StringInfo(dest, elems, nulls, eltp, nelems, ndim, dims)` — сериализует массив в JSON-подобную строку.
+- `pgau_datum_to_json_cstring(value, type, outfunc)` — преобразует Datum в C-строку JSON: числовые/boolean — без изменений, остальные — с `escape_json`.
+- `pgau_deconstructed_ArrayType_to_StringInfo(dest, elems, nulls, eltp, nelems, ndim, dims, outfunc)` — сериализует массив, уже разобранный с помощью `deconstruct_array`, в JSON-подобную строку.
+- `pgau_ArrayType_to_StringInfo(dest, array, outfunc)` — сериализует произвольный `ArrayType*` в JSON-подобную строку.
 
 ### Примечания
 
