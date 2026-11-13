@@ -202,7 +202,12 @@ array_pad_arr(PG_FUNCTION_ARGS)
     {
         res_array = construct_empty_array(eltp);
         pfree(elem_elements);
-        pfree(elem_nulls);
+        if (elem_nulls) pfree(elem_nulls);
+        if (!arg_arr_empty)
+        {
+            pfree(arg_elements);
+            if (arg_nulls) pfree(arg_nulls);
+        }
         PG_RETURN_ARRAYTYPE_P(res_array);
     }
 

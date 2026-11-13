@@ -15,10 +15,12 @@ pgau_numeric_is_zero(Oid eltp, Datum a)
         case OIDOID: { uint32 x = DatumGetObjectId(a); return x == (uint32)0; }
         case FLOAT4OID: { return float4_cmp_internal(DatumGetFloat4(a), (float4)0.0) == 0; }
         case FLOAT8OID: { return float8_cmp_internal(DatumGetFloat8(a), (float8)0.0) == 0; }
-        case NUMERICOID: 
-        { 
+        case NUMERICOID:
+        {
             Datum numeric_zero = DirectFunctionCall1(int4_numeric, Int32GetDatum(0));
-            return DatumGetInt32(DirectFunctionCall2(numeric_cmp, a, numeric_zero)) == 0; 
+            bool res = DatumGetInt32(DirectFunctionCall2(numeric_cmp, a, numeric_zero)) == 0;
+            pfree(DatumGetPointer(numeric_zero));
+            return res;
         }
         default: 
         { 
@@ -48,7 +50,14 @@ pgau_text_is_empty(Oid eltp, Datum a)
         }
         case CHAROID: { return DatumGetChar(a) == '\0'; }
         case NAMEOID: { return NameStr(*DatumGetName(a))[0] == '\0'; }
-        case BYTEAOID: { return VARSIZE_ANY_EXHDR(DatumGetByteaPP(a)) == 0; }
+        case BYTEAOID:
+        {
+            bytea *b = DatumGetByteaPP(a);
+            bool res = VARSIZE_ANY_EXHDR(b) == 0;
+            if ((Pointer) b != DatumGetPointer(a))
+                pfree(b);
+            return res;
+        }
         default:
         {
             ereport(ERROR,
@@ -75,25 +84,25 @@ pgau_datum_to_json_cstring(Datum value, Oid type, Oid outfunc)
     }
     else otf = outfunc;
 
-    if (type == BOOLOID)
+    switch(type)
     {
-        result = pstrdup(DatumGetBool(value) ? "true" : "false");
-    }
-    else if (type == INT2OID || type == INT4OID || type == INT8OID ||
-        type == FLOAT4OID || type == FLOAT8OID ||
-        type == NUMERICOID)
-    {
-        result = OidOutputFunctionCall(otf, value);
-    }
-    else
-    {
-        StringInfoData buf;
-        char *raw = OidOutputFunctionCall(otf, value);
+        case BOOLOID: { result = pstrdup(DatumGetBool(value) ? "true" : "false"); break; }
+        case INT2OID: { result = psprintf("%d", DatumGetInt16(value)); break; }
+        case INT4OID: { result = psprintf("%d", DatumGetInt32(value)); break; }
+        case INT8OID: { result = psprintf(INT64_FORMAT, DatumGetInt64(value)); break; }
+        case FLOAT4OID: { result = psprintf("%f", DatumGetFloat4(value)); break; }
+        case FLOAT8OID: { result = psprintf("%g", DatumGetFloat8(value)); break; }
+        case NUMERICOID: { result = OidOutputFunctionCall(otf, value); break;}
+        default:
+        {
+            StringInfoData buf;
+            char *raw = OidOutputFunctionCall(otf, value);
         
-        initStringInfo(&buf);
-        escape_json(&buf, raw);
-        result = buf.data;
-        pfree(raw);
+            initStringInfo(&buf);
+            escape_json(&buf, raw);
+            result = buf.data;
+            pfree(raw);
+        }
     }
     return result;
 }

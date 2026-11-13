@@ -113,7 +113,8 @@ array_zip(PG_FUNCTION_ARGS)
                 pgau_ArrayType_to_StringInfo(&element_json_str, element_array, arg_arrays_outfuncs[j]);
                 appendStringInfoString(&buf, element_json_str.data);
                 pfree(element_json_str.data);
-                pfree(element_array);
+                if ((Pointer) element_array != DatumGetPointer(itel_datum))
+                    pfree(element_array);
             }
         }
         appendStringInfoChar(&buf, '}');
