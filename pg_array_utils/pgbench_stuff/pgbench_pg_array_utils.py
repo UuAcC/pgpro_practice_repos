@@ -13,7 +13,7 @@ EXTENSION_NAME = "pg_array_utils"
 USED_VERSION   = sys.argv[1]
 TIME           = 60
 THREADS        = 2
-CLIENTS        = [1, 2, 4, 8, 16, 32, 64, 128]
+CLIENTS        = [1, 2, 4, 8, 16]  
 REPEATS        = 3
 
 HOME        = Path.home()
@@ -160,6 +160,9 @@ def main():
                                      f"{ext_lat - base_lat:.3f}",
                                      ext_txt])
                     ft.flush()
+                    wt.writerow("")
+                wt.writerow("")
+                wt.writerow("")
         
         # =============================================
         # Завершение
