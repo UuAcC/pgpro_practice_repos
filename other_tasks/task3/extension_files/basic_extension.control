@@ -1,0 +1,4 @@
+comment = 'A basic HELLOWORLD extension'
+default_version = '1.0'
+module_pathname = '$libdir/basic_extension'
+relocatable = true

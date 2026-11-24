@@ -1,4 +1,0 @@
-CREATE OR REPLACE FUNCTION hello_world(text)
-RETURNS void
-AS 'MODULE_PATHNAME', 'hello_world'
-LANGUAGE C STRICT;
